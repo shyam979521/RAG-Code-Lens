@@ -1,0 +1,6 @@
+lask
+flask-sqlalchemy
+google-generativeai
+faiss-cpu
+numpy
+python-dotenv

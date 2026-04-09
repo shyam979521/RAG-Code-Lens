@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Code Lens – AI Code Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6c63ff;
+            --primary-dark: #5a52d5;
+            --accent: #00d4ff;
+            --bg-dark: #0a0a1a;
+            --bg-card: rgba(255,255,255,0.05);
+            --glass: rgba(255,255,255,0.08);
+            --glass-border: rgba(255,255,255,0.12);
+            --text: #e4e4e7;
+            --text-muted: #a1a1aa;
+            --success: #22c55e;
+            --error: #ef4444;
+            --gradient: linear-gradient(135deg, #6c63ff, #00d4ff);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+        a { text-decoration: none; color: inherit; }
+
+        /* Animated background */
+        .bg-glow {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+        }
+        .bg-glow::before, .bg-glow::after {
+            content: ''; position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.3;
+        }
+        .bg-glow::before {
+            width: 500px; height: 500px; background: var(--primary); top: -100px; left: -100px;
+            animation: float1 8s ease-in-out infinite;
+        }
+        .bg-glow::after {
+            width: 400px; height: 400px; background: var(--accent); bottom: -100px; right: -100px;
+            animation: float2 10s ease-in-out infinite;
+        }
+        @keyframes float1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(80px,60px)} }
+        @keyframes float2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-60px,-80px)} }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+        /* Navbar */
+        nav {
+            position: fixed; top: 0; width: 100%; z-index: 100;
+            background: rgba(10,10,26,0.7); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .nav-inner {
+            max-width: 1200px; margin: 0 auto; padding: 0 24px;
+            display: flex; align-items: center; justify-content: space-between; height: 64px;
+        }
+        .logo { font-weight: 700; font-size: 1.25rem; display: flex; align-items: center; gap: 8px; }
+        .logo i { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.4rem; }
+        .nav-links { display: flex; gap: 28px; align-items: center; }
+        .nav-links a { font-size: 0.9rem; color: var(--text-muted); transition: color 0.3s; }
+        .nav-links a:hover { color: var(--text); }
+        .nav-btns { display: flex; gap: 12px; }
+        .btn {
+            padding: 10px 24px; border-radius: 10px; font-weight: 600; font-size: 0.9rem;
+            cursor: pointer; transition: all 0.3s; border: none; font-family: 'Inter', sans-serif;
+        }
+        .btn-outline {
+            background: transparent; border: 1px solid var(--glass-border); color: var(--text);
+        }
+        .btn-outline:hover { background: var(--glass); border-color: var(--primary); }
+        .btn-primary {
+            background: var(--gradient); color: #fff;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(108,99,255,0.4); }
+        .hamburger { display: none; background: none; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; }
+
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .mobile-menu {
+            display: none;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 160px 0 100px; text-align: center;
+        }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--glass); border: 1px solid var(--glass-border);
+            padding: 6px 16px; border-radius: 50px; font-size: 0.8rem; color: var(--accent);
+            margin-bottom: 24px;
+        }
+        .hero h1 {
+            font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 800;
+            line-height: 1.1; margin-bottom: 20px;
+        }
+        .hero h1 span { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 1.15rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 36px; line-height: 1.7; }
+        .hero-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .hero-visual {
+            margin-top: 60px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 28px;
+            backdrop-filter: blur(14px);
+            max-width: 860px;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+        }
+        .hero-grid { display: grid; grid-template-columns: 1.3fr 0.9fr; gap: 24px; align-items: stretch; }
+        .hero-panel, .hero-sidecard { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 20px; }
+        .hero-panel-header, .sidecard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+        .hero-panel-header strong, .sidecard-header strong { font-size: 0.95rem; }
+        .hero-pill { padding: 6px 10px; border-radius: 999px; background: rgba(0, 212, 255, 0.12); color: var(--accent); font-size: 0.76rem; }
+        .code-line { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-muted); text-align: left; padding: 4px 0; }
+        .code-line .keyword { color: var(--primary); }
+        .code-line .fn { color: var(--accent); }
+        .code-line .str { color: #f472b6; }
+        .hero-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 20px; }
+        .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; text-align: left; }
+        .stat-card span { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; }
+        .stat-card strong { font-size: 1.4rem; }
+        .hero-sidecard ul { list-style: none; display: grid; gap: 12px; }
+        .hero-sidecard li { display: flex; gap: 12px; align-items: flex-start; color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
+        .hero-sidecard i { color: var(--accent); margin-top: 3px; }
+        .section-kicker { display: inline-block; margin-bottom: 12px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--glass-border); color: var(--accent); font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; }
+
+        /* Sections common */
+        section { padding: 100px 0; }
+        .section-title {
+            text-align: center; margin-bottom: 60px;
+        }
+        .section-title h2 { font-size: 2rem; font-weight: 700; margin-bottom: 12px; }
+        .section-title p { color: var(--text-muted); max-width: 500px; margin: 0 auto; }
+
+        /* Upload Section */
+        .upload-area {
+            background: var(--glass); border: 2px dashed var(--glass-border);
+            border-radius: 16px; padding: 60px 32px; text-align: center;
+            backdrop-filter: blur(10px); transition: all 0.3s; cursor: pointer;
+            max-width: 700px; margin: 0 auto;
+        }
+        .upload-area:hover { border-color: var(--primary); background: rgba(108,99,255,0.05); }
+        .upload-area i { font-size: 3rem; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 16px; }
+        .upload-area h3 { font-size: 1.2rem; margin-bottom: 8px; }
+        .upload-area p { color: var(--text-muted); font-size: 0.9rem; }
+
+        /* Query Section */
+        .query-box {
+            max-width: 700px; margin: 0 auto;
+            background: var(--glass); border: 1px solid var(--glass-border);
+            border-radius: 16px; padding: 24px; backdrop-filter: blur(10px);
+        }
+        .query-input-wrap {
+            display: flex; gap: 12px;
+        }
+        .query-input-wrap input {
+            flex: 1; padding: 14px 18px; border-radius: 10px;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            color: var(--text); font-size: 0.95rem; font-family: 'Inter', sans-serif;
+            outline: none; transition: border 0.3s;
+        }
+        .query-input-wrap input:focus { border-color: var(--primary); }
+        .query-input-wrap button { flex-shrink: 0; }
+
+        /* Example Cards */
+        .example-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 16px; margin-top: 24px; }
+        .example-card {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+            border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.3s;
+            font-size: 0.85rem; color: var(--text-muted);
+        }
+        .example-card:hover { background: rgba(108,99,255,0.08); border-color: var(--primary); color: var(--text); transform: translateY(-2px); }
+        .example-card i { color: var(--accent); margin-right: 8px; }
+
+        /* Features */
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 24px; }
+        .feature-card {
+            background: var(--glass); border: 1px solid var(--glass-border);
+            border-radius: 16px; padding: 32px; backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+        .feature-card:hover { transform: translateY(-4px); border-color: var(--primary); box-shadow: 0 20px 40px rgba(108,99,255,0.1); }
+        .feature-icon {
+            width: 48px; height: 48px; border-radius: 12px; background: var(--gradient);
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+            color: #fff; margin-bottom: 20px;
+        }
+        .feature-card h3 { font-size: 1.1rem; margin-bottom: 10px; }
+        .feature-card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; }
+
+        /* How It Works */
+        .steps { display: flex; flex-direction: column; gap: 32px; max-width: 700px; margin: 0 auto; }
+        .step {
+            display: flex; gap: 24px; align-items: flex-start;
+            background: var(--glass); border: 1px solid var(--glass-border);
+            border-radius: 16px; padding: 28px; backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+        .step:hover { border-color: var(--primary); }
+        .step-num {
+            min-width: 44px; height: 44px; border-radius: 12px; background: var(--gradient);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1.1rem; color: #fff;
+        }
+        .step h3 { font-size: 1.05rem; margin-bottom: 6px; }
+        .step p { color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; }
+
+        .flash-stack-shell { margin-top: 92px; position: relative; z-index: 2; display: grid; gap: 12px; }
+        .flash-banner { padding: 14px 18px; border-radius: 14px; backdrop-filter: blur(12px); border: 1px solid transparent; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18); }
+        .flash-banner.success { background: rgba(34, 197, 94, 0.14); border-color: rgba(34, 197, 94, 0.35); color: #bbf7d0; }
+        .flash-banner.error { background: rgba(239, 68, 68, 0.14); border-color: rgba(239, 68, 68, 0.35); color: #fecaca; }
+        .upload-status { margin-top: 18px; text-align: center; color: var(--text-muted); font-size: 0.92rem; }
+        .upload-status strong { color: var(--text); }
+        .surface-note { margin-top: 22px; text-align: center; color: var(--text-muted); font-size: 0.88rem; }
+        .locked-surface, .preview-answer, .recent-uploads { max-width: 760px; margin: 0 auto; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 18px; padding: 28px; backdrop-filter: blur(12px); }
+        .locked-surface { text-align: center; }
+        .locked-surface i { font-size: 2rem; color: var(--accent); margin-bottom: 14px; }
+        .locked-surface p { color: var(--text-muted); line-height: 1.7; }
+        .locked-actions { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 18px; }
+        .recent-uploads { margin-top: 22px; }
+        .recent-uploads h3, .preview-answer h3 { margin-bottom: 12px; }
+        .recent-uploads ul { list-style: none; display: grid; gap: 12px; }
+        .recent-uploads li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: var(--text-muted); }
+        .recent-uploads li strong { color: var(--text); font-size: 0.95rem; }
+        .preview-answer { display: grid; gap: 18px; }
+        .preview-answer p { color: var(--text-muted); line-height: 1.7; }
+        .preview-answer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .preview-answer-card { padding: 18px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
+        .preview-answer-card h4 { margin-bottom: 10px; }
+        .preview-answer-card ul { list-style: none; display: grid; gap: 10px; color: var(--text-muted); font-size: 0.9rem; }
+        .preview-answer-card li { display: flex; gap: 10px; }
+        .preview-answer-card i { color: var(--accent); margin-top: 4px; }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--glass-border); padding: 40px 0; margin-top: 40px;
+        }
+        .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+        .footer-inner p { color: var(--text-muted); font-size: 0.85rem; }
+        .footer-links { display: flex; gap: 20px; }
+        .footer-links a { color: var(--text-muted); font-size: 0.85rem; transition: color 0.3s; }
+        .footer-links a:hover { color: var(--accent); }
+
+        /* FIX: hide mobile menu by default */
+        .mobile-menu {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links, .nav-btns { display: none; }
+            .hamburger { display: block; }
+            .mobile-menu {
+                display: none; position: fixed; top: 64px; left: 0; width: 100%; background: rgba(10,10,26,0.95);
+                backdrop-filter: blur(20px); padding: 24px; flex-direction: column; gap: 16px;
+                border-bottom: 1px solid var(--glass-border);
+            }
+            .mobile-menu.active { display: flex; }
+            .mobile-menu a { font-size: 1rem; color: var(--text-muted); padding: 8px 0; }
+            .query-input-wrap { flex-direction: column; }
+            .step { flex-direction: column; }
+            .hero-grid, .hero-stats, .preview-answer-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Animations */
+        .fade-up { opacity: 0; transform: translateY(30px); transition: all 0.6s ease-out; }
+        .fade-up.visible { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+    <div class="bg-glow"></div>
+
+    <!-- Navbar -->
+    <nav>
+        <div class="nav-inner">
+            <a href="{{ url_for('home') }}" class="logo"><i class="fas fa-code"></i> RAG Code Lens</a>
+
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#upload">Upload</a>
+                <a href="#query">Ask Query</a>
+                <a href="#how-it-works">How It Works</a>
+            </div>
+
+            <div class="nav-btns">
+                {% if session.get('user_id') %}
+                    <span style="align-self:center; color: var(--text); font-weight: 500;">
+                        Hi, {{ session.get('user_name') }}
+                    </span>
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('signin') }}" class="btn btn-outline">Login</a>
+                    <a href="{{ url_for('signup') }}" class="btn btn-primary">Register</a>
+                {% endif %}
+            </div>
+
+            <button class="hamburger" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+        </div>
+
+        <div class="mobile-menu" id="mobileMenu">
+            <a href="#features">Features</a>
+            <a href="#upload">Upload</a>
+            <a href="#query">Ask Query</a>
+            <a href="#how-it-works">How It Works</a>
+
+            {% if session.get('user_id') %}
+                <a href="javascript:void(0)">Hi, {{ session.get('user_name') }}</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+                <a href="{{ url_for('signin') }}">Login</a>
+                <a href="{{ url_for('signup') }}">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="container flash-stack-shell">
+        {% for category, message in messages %}
+            <div class="flash-banner {{ category }}"><span>{{ message }}</span></div>
+        {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="fade-up">
+                <div class="hero-badge"><i class="fas fa-bolt"></i> Built for Retrieval-Augmented Engineering</div>
+                <span class="section-kicker">Context-Aware Code Intelligence</span>
+                <h1>Turn Any Repository Into a<br><span>Searchable Knowledge Base</span></h1>
+                <p>RAG Code Lens transforms uploaded projects into a retrieval-ready workspace so students, interns, and teams can inspect architecture, trace logic, and ask grounded questions in plain language.</p>
+                <div class="hero-btns">
+                    {% if session.get('user_id') %}
+                        <a href="#upload" class="btn btn-primary">
+                            <i class="fas fa-rocket"></i>&nbsp; Upload Codebase
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('signup') }}" class="btn btn-primary">
+                            <i class="fas fa-rocket"></i>&nbsp; Get Started
+                        </a>
+                    {% endif %}
+                    <a href="#how-it-works" class="btn btn-outline">
+                        <i class="fas fa-play"></i>&nbsp; See How It Works
+                    </a>
+                </div>
+            </div>
+            <div class="hero-visual fade-up">
+                <div class="hero-grid">
+                    <div class="hero-panel">
+                        <div class="hero-panel-header">
+                            <strong>RAG Session Preview</strong>
+                            <span class="hero-pill">Live Context</span>
+                        </div>
+                        <div class="code-line"><span class="keyword">from</span> rag_engine <span class="keyword">import</span> <span class="fn">CodeAssistant</span></div>
+                        <div class="code-line">assistant = <span class="fn">CodeAssistant</span>(<span class="str">"./uploaded_repo"</span>)</div>
+                        <div class="code-line">context = assistant.<span class="fn">retrieve</span>(<span class="str">"show me auth + DB flow"</span>)</div>
+                        <div class="code-line">answer = assistant.<span class="fn">ask</span>(<span class="str">"How is token refresh handled?"</span>)</div>
+                        <div class="code-line"><span class="keyword">print</span>(answer.references)  <span style="color:#555"># grounded file citations</span></div>
+                        <div class="hero-stats">
+                            <div class="stat-card"><span>Uploaded ZIPs</span><strong>{{ upload_count }}</strong></div>
+                            <div class="stat-card"><span>Registered Users</span><strong>{{ user_count }}</strong></div>
+                            <div class="stat-card"><span>Latest Upload</span><strong>{{ latest_upload or 'None' }}</strong></div>
+                        </div>
+                    </div>
+                    <div class="hero-sidecard">
+                        <div class="sidecard-header">
+                            <strong>Why It Feels Better</strong>
+                            <span class="hero-pill">RAG UX</span>
+                        </div>
+                        <ul>
+                            <li><i class="fas fa-check-circle"></i><span>Upload once and immediately start asking repository-level questions.</span></li>
+                            <li><i class="fas fa-check-circle"></i><span>Keep explanations grounded with retrieved code context instead of generic AI output.</span></li>
+                            <li><i class="fas fa-check-circle"></i><span>Use it as a project demo surface for internships, vivas, or onboarding walkthroughs.</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upload Section -->
+    <section id="upload">
+        <div class="container">
+            <div class="section-title fade-up">
+                <h2>Upload Your Codebase</h2>
+                <p>Drop in a ZIP archive and turn your project into a retrieval-ready workspace for grounded Q&amp;A.</p>
+            </div>
+            {% if session.get('user_id') %}
+            <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div class="upload-area fade-up" id="uploadArea" tabindex="0" role="button">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Upload your project ZIP here</h3>
+                    <p>Click to browse files &nbsp;&middot;&nbsp; Supports .zip up to 100MB</p>
+                    <input type="file" id="fileInput" name="fileInput" accept=".zip" hidden>
+                </div>
+            </form>
+            {% if latest_upload %}
+            <p class="upload-status fade-up">Latest uploaded file: <strong>{{ latest_upload }}</strong></p>
+            {% endif %}
+            {% if recent_uploads %}
+            <div class="recent-uploads fade-up">
+                <h3>Recent Uploads</h3>
+                <ul>
+                    {% for item in recent_uploads %}
+                    <li><strong>{{ item }}</strong><span>Indexed ZIP</span></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="locked-surface fade-up">
+                <i class="fas fa-lock"></i>
+                <h3>Login Required for Uploads</h3>
+                <p>To protect your private repositories and keep the RAG workspace tied to an authenticated session, ZIP upload is available only after sign in or registration.</p>
+                <div class="locked-actions">
+                    <a href="{{ url_for('signin') }}" class="btn btn-primary">Login</a>
+                    <a href="{{ url_for('signup') }}" class="btn btn-outline">Register</a>
+                </div>
+            </div>
+            {% endif %}
+            <p class="surface-note fade-up">Best results come from clean project ZIPs with source files, config, and docs included.</p>
+        </div>
+    </section>
+
+    <!-- Query Section -->
+    <section id="query">
+        <div class="container">
+            <div class="section-title fade-up">
+                <h2>Ask a Question</h2>
+                <p>Ask architecture, flow, or dependency questions in plain language and use RAG to stay grounded in the code.</p>
+            </div>
+            <div class="query-box fade-up">
+                {% if session.get('user_id') %}
+                <form action="{{ url_for('ask') }}" method="POST" class="query-input-wrap">
+                    <input type="text" id="questionInput" name="questionInput" placeholder="e.g. What does the login function do?" required>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i>&nbsp; Ask</button>
+                </form>
+                <div class="example-cards">
+                    <div class="example-card" onclick="fillQuery('How does the database connection work?')">
+                        <i class="fas fa-database"></i>How does the database connection work?
+                    </div>
+                    <div class="example-card" onclick="fillQuery('Explain the authentication flow')">
+                        <i class="fas fa-lock"></i>Explain the authentication flow
+                    </div>
+                    <div class="example-card" onclick="fillQuery('What are the API endpoints?')">
+                        <i class="fas fa-plug"></i>What are the API endpoints?
+                    </div>
+                    <div class="example-card" onclick="fillQuery('How is error handling implemented?')">
+                        <i class="fas fa-bug"></i>How is error handling implemented?
+                    </div>
+                </div>
+                {% else %}
+                <div class="locked-surface">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Ask Mode Unlocks After Login</h3>
+                    <p>Question answering, prompt suggestions, and repository retrieval are disabled for guests. Create an account or sign in to activate the RAG assistant.</p>
+                    <div class="locked-actions">
+                        <a href="{{ url_for('signin') }}" class="btn btn-primary">Login</a>
+                        <a href="{{ url_for('signup') }}" class="btn btn-outline">Register</a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section id="answer-preview">
+        <div class="container">
+            <div class="section-title fade-up">
+                <h2>Sample RAG Answer Preview</h2>
+                <p>This is the kind of grounded, structured explanation your project can showcase once a codebase is indexed.</p>
+            </div>
+            <div class="preview-answer fade-up">
+                <p><strong>Example query:</strong> "How does authentication flow through the app?"</p>
+                <div class="preview-answer-grid">
+                    <div class="preview-answer-card">
+                        <h4>What the assistant would summarize</h4>
+                        <ul>
+                            <li><i class="fas fa-angle-right"></i><span>It traces the login request from form submission to password verification and session creation.</span></li>
+                            <li><i class="fas fa-angle-right"></i><span>It highlights guarded routes like upload and ask, showing how access depends on authenticated state.</span></li>
+                            <li><i class="fas fa-angle-right"></i><span>It can combine retrieval over auth logic, storage flow, and UX messaging into one explanation.</span></li>
+                        </ul>
+                    </div>
+                    <div class="preview-answer-card">
+                        <h4>Why this helps your demo</h4>
+                        <ul>
+                            <li><i class="fas fa-angle-right"></i><span>Shows grounded understanding instead of generic AI text.</span></li>
+                            <li><i class="fas fa-angle-right"></i><span>Makes your final-year project easier to explain during a viva or presentation.</span></li>
+                            <li><i class="fas fa-angle-right"></i><span>Turns repository onboarding into a clear before-vs-after story.</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features">
+        <div class="container">
+            <div class="section-title fade-up">
+                <h2>Key Features</h2>
+                <p>A sharper demo surface for showing how your RAG project improves code understanding.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card fade-up">
+                    <div class="feature-icon"><i class="fas fa-brain"></i></div>
+                    <h3>RAG-Powered Answers</h3>
+                    <p>Combines retrieval from your codebase with LLM generation for accurate, context-aware explanations.</p>
+                </div>
+                <div class="feature-card fade-up">
+                    <div class="feature-icon"><i class="fas fa-search-plus"></i></div>
+                    <h3>Semantic Code Search</h3>
+                    <p>Search by meaning, not just keywords. Find relevant functions, classes, and modules instantly.</p>
+                </div>
+                <div class="feature-card fade-up">
+                    <div class="feature-icon"><i class="fas fa-project-diagram"></i></div>
+                    <h3>Dependency Mapping</h3>
+                    <p>Visualize how files and modules connect, making it easy to trace data flow and logic.</p>
+                </div>
+                <div class="feature-card fade-up">
+                    <div class="feature-icon"><i class="fas fa-comments"></i></div>
+                    <h3>Natural Language Queries</h3>
+                    <p>Ask questions in plain English — no need to understand the codebase structure beforehand.</p>
+                </div>
+                <div class="feature-card fade-up">
+                    <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                    <h3>Secure & Private</h3>
+                    <p>Your code stays private. All processing happens in your environment with no external data sharing.</p>
+                </div>
+                <div class="feature-card fade-up">
+                    <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+                    <h3>Fast Onboarding</h3>
+                    <p>New to a project? Get up to speed in minutes instead of days by asking the right questions.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works">
+        <div class="container">
+            <div class="section-title fade-up">
+                <h2>How It Works</h2>
+                <p>The RAG pipeline behind RAG Code Lens.</p>
+            </div>
+            <div class="steps">
+                <div class="step fade-up">
+                    <div class="step-num">1</div>
+                    <div>
+                        <h3>Upload Codebase</h3>
+                        <p>Upload your project as a ZIP file. The system parses all source files and extracts meaningful code chunks.</p>
+                    </div>
+                </div>
+                <div class="step fade-up">
+                    <div class="step-num">2</div>
+                    <div>
+                        <h3>Embedding & Indexing</h3>
+                        <p>Code chunks are converted into vector embeddings and stored in a vector database for fast semantic retrieval.</p>
+                    </div>
+                </div>
+                <div class="step fade-up">
+                    <div class="step-num">3</div>
+                    <div>
+                        <h3>Query Processing</h3>
+                        <p>Your natural language question is embedded and matched against the most relevant code chunks using similarity search.</p>
+                    </div>
+                </div>
+                <div class="step fade-up">
+                    <div class="step-num">4</div>
+                    <div>
+                        <h3>LLM-Powered Response</h3>
+                        <p>Retrieved code context is fed to a large language model which generates a clear, detailed answer with references.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-inner">
+                <p>&copy; {{ 2026 }} RAG Code Lens. Built for Final Year Project.</p>
+                <div class="footer-links">
+                    <a href="#">GitHub</a>
+                    <a href="#">Documentation</a>
+                    <a href="#">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        function toggleMenu() {
+            document.getElementById('mobileMenu').classList.toggle('active');
+        }
+
+        // Fill query input from example cards
+        function fillQuery(text) {
+            const input = document.getElementById('questionInput');
+            if (!input) {
+                window.location.href = '{{ url_for('signin') }}';
+                return;
+            }
+            input.value = text;
+            input.focus();
+}
+
+        // Upload area click
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+            uploadArea.addEventListener('click', function() {
+                document.getElementById('fileInput').click();
+            });
+        }
+
+        // Scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('mobileMenu').classList.remove('active');
+            });
+        });
+
+        // Close mobile menu on outside click
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('mobileMenu');
+            const hamburger = document.querySelector('.hamburger');
+
+            if (!menu.contains(e.target) && !hamburger.contains(e.target)) {
+                menu.classList.remove('active');
+            }
+        });
+
+        // File input validation and submission
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (!file) return;
+
+                if (!file.name.toLowerCase().endsWith('.zip')) {
+                    alert('Please upload a ZIP file only.');
+                    this.value = '';
+                    return;
+                }
+
+                if (file.size > 100 * 1024 * 1024) {
+                    alert('File size must be less than 100MB.');
+                    this.value = '';
+                    return;
+                }
+
+                document.getElementById('uploadForm').submit();
+            });
+        }
+    </script>
+</body>
+</html>
