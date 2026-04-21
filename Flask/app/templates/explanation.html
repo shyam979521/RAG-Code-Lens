@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="header-section text-center animate-fade-in">
+    <h1
+        style="background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;">
+        File Explanation
+    </h1>
+    <h2 style="color: #94a3b8; font-size: 1.5rem; margin-top: 0;">{{ file.filename }}</h2>
+</div>
+
+<div class="card animate-fade-in" style="margin-top: 2rem; position: relative; min-height: 400px;">
+    <div style="position: absolute; top: 1.5rem; right: 1.5rem;">
+        <a href="/file?id={{ file.id }}" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+            ← Back to Code
+        </a>
+    </div>
+
+    <!-- Hidden raw markdown -->
+    <div id="raw-markdown" style="display: none;">{{ explanation }}</div>
+
+    <!-- Rendered Content -->
+    <div id="markdown-content" class="markdown-body">
+        <div style="text-align: center; color: #94a3b8; padding: 2rem;">
+            Rendering explanation...
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const raw = document.getElementById('raw-markdown').innerText;
+        const container = document.getElementById('markdown-content');
+
+        // Configure marked options if needed
+        marked.use({
+            gfm: true,
+            breaks: true
+        });
+
+        if (raw) {
+            container.innerHTML = marked.parse(raw);
+        } else {
+            container.innerHTML = '<p style="color: #ef4444;">Error: No explanation content available.</p>';
+        }
+    });
+</script>
+
+<style>
+    /* Reuse markdown styles from docs page */
+    .markdown-body {
+        color: var(--text-color);
+        line-height: 1.8;
+    }
+
+    .markdown-body h2 {
+        color: var(--primary-color);
+        border-bottom: 1px solid var(--glass-border);
+        padding-bottom: 0.5rem;
+        margin-top: 2rem;
+    }
+
+    .markdown-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+    }
+
+    .markdown-body th,
+    .markdown-body td {
+        border: 1px solid var(--glass-border);
+        padding: 0.8rem;
+        text-align: left;
+    }
+
+    .markdown-body th {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--primary-color);
+    }
+
+    .markdown-body code {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-family: monospace;
+        color: var(--accent-color);
+    }
+
+    .markdown-body ul {
+        padding-left: 1.5rem;
+    }
+
+    .markdown-body li {
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}

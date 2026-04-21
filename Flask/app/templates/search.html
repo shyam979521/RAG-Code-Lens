@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; text-align: center;">
+    <h1
+        style="font-size: 2.5rem; margin-bottom: 2rem; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        Search Codebase
+    </h1>
+
+    <div class="card"
+        style="display: flex; gap: 0.5rem; padding: 0.5rem; border-radius: 1rem; align-items: center; border: 1px solid var(--primary-color); box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);">
+        <span style="font-size: 1.5rem; padding-left: 1rem;">🔍</span>
+        <input type="text" id="query" placeholder="Ask a question (e.g., 'How is authentication handled?')"
+            style="border: none; background: transparent; font-size: 1.1rem; margin-bottom: 0; box-shadow: none;"
+            onkeydown="if(event.key === 'Enter') performSearch()">
+        <button onclick="performSearch()" class="btn" style="border-radius: 0.8rem; padding: 0.8rem 1.5rem;">
+            Ask AI
+        </button>
+    </div>
+
+    <div id="loading" style="display: none; margin-top: 2rem;">
+        <svg class="spinner" viewBox="0 0 50 50" style="width: 30px; height: 30px;">
+            <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+        </svg>
+        <p style="margin-top: 1rem; color: #94a3b8;">Analyzing codebase & generating answer...</p>
+    </div>
+</div>
+
+<div id="results" style="margin-top: 3rem; display: none; animation: fadeIn 0.5s ease-out;">
+    <div class="card" style="border-left: 4px solid var(--accent-color);">
+        <h3 style="color: var(--primary-color); display: flex; align-items: center; gap: 0.5rem;">
+            🤖 AI Answer
+        </h3>
+        <div id="aiReply" style="line-height: 1.8; color: var(--text-color); white-space: pre-wrap;"></div>
+    </div>
+
+    <h3 style="margin-top: 2rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        📚 Source Citations
+    </h3>
+    <div id="citationsGrid"
+        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+        <!-- Citations will appear here -->
+    </div>
+</div>
+
+<style>
+    /* Spinner */
+    @keyframes rotate {
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes dash {
+        0% {
+            stroke-dasharray: 1, 150;
+            stroke-dashoffset: 0;
+        }
+
+        50% {
+            stroke-dasharray: 90, 150;
+            stroke-dashoffset: -35;
+        }
+
+        100% {
+            stroke-dasharray: 90, 150;
+            stroke-dashoffset: -124;
+        }
+    }
+
+    .spinner {
+        animation: rotate 2s linear infinite;
+    }
+
+    .path {
+        stroke: var(--primary-color);
+        stroke-linecap: round;
+        animation: dash 1.5s ease-in-out infinite;
+    }
+
+    /* Citation Card */
+    .citation-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        padding: 1rem;
+        border-radius: 0.8rem;
+        transition: transform 0.2s, border-color 0.2s;
+        cursor: pointer;
+    }
+
+    .citation-card:hover {
+        transform: translateY(-3px);
+        border-color: var(--primary-color);
+    }
+</style>
+
+<script>
+    async function performSearch() {
+        const query = document.getElementById('query').value;
+        if (!query.trim()) return;
+
+        const resultsDiv = document.getElementById('results');
+        const loadingDiv = document.getElementById('loading');
+        const aiReply = document.getElementById('aiReply');
+        const citationsGrid = document.getElementById('citationsGrid');
+
+        // State: Loading
+        resultsDiv.style.display = 'none';
+        loadingDiv.style.display = 'block';
+
+        try {
+            const response = await fetch('/api/query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query })
+            });
+            const data = await response.json();
+
+            // Render Answer
+            // If data.answer contains markdown, we could use marked.js, but simple text replacement is safer for now if lib not loaded
+            // We'll trust the backend sends clean text or use basic replacement
+            aiReply.innerHTML = data.answer.replace(/\n/g, '<br>');
+
+            // Render Citations
+            citationsGrid.innerHTML = '';
+            if (data.citations && data.citations.length > 0) {
+                data.citations.forEach(cit => {
+                    // Try to parse cit if it's an object or just a string
+                    // Usually it's a filename or path
+                    const card = document.createElement('div');
+                    card.className = 'citation-card';
+                    card.innerHTML = `
+                        <div style="font-weight: 600; color: #e2e8f0; display: flex; align-items: center; gap: 0.5rem;">
+                            📄 ${cit.filename || cit}
+                        </div>
+                        ${cit.score ? `<div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem;">Relevance: ${(100 - cit.score * 100).toFixed(0)}%</div>` : ''}
+                    `;
+                    // If we had file IDs, we could link to view code
+                    citationsGrid.appendChild(card);
+                });
+            } else {
+                citationsGrid.innerHTML = '<p style="color: #94a3b8;">No specific citations returned.</p>';
+            }
+
+            // State: Show Results
+            loadingDiv.style.display = 'none';
+            resultsDiv.style.display = 'block';
+
+        } catch (e) {
+            alert("Error: " + e.message);
+            loadingDiv.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

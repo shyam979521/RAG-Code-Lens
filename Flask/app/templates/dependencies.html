@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dependency Graph</h1>
+<div class="card">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="text-align: left; border-bottom: 1px solid var(--glass-border);">
+                <th style="padding: 1rem;">Parent File</th>
+                <th style="padding: 1rem;">Imports (Child)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dep in deps %}
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 1rem; color: var(--primary-color);">{{ dep.parent_file }}</td>
+                <td style="padding: 1rem;">{{ dep.child_file }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if not deps %}
+    <p style="padding: 1rem; text-align: center; color: #94a3b8;">No dependencies found or graph not built yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

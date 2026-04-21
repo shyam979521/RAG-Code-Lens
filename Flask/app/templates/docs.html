@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="text-align: center; margin-bottom: 3rem; animation: fadeIn 0.5s ease-out;">
+    <h1 style="font-size: 2.5rem; margin-bottom: 1rem; background: linear-gradient(to right, var(--primary-color), var(--accent-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        Project Documentation Center
+    </h1>
+    <p style="color: #94a3b8; max-width: 600px; margin: 0 auto; line-height: 1.6;">
+        Harness the power of AI to automatically generate comprehensive technical documentation for your entire codebase. 
+        Create READMEs, API references, and architecture overviews in seconds.
+    </p>
+</div>
+
+<div style="display: flex; justify-content: center; margin-bottom: 3rem;">
+    <button id="generateBtn" onclick="generateDocs()" class="btn" style="padding: 1rem 3rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.8rem;">
+        <span id="btnIcon">✨</span>
+        <span id="btnText">Generate Documentation</span>
+        <span id="btnLoader" style="display: none;">
+            <svg class="spinner" viewBox="0 0 50 50">
+                <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+            </svg>
+        </span>
+    </button>
+</div>
+
+<div id="resultContainer" class="card" style="display: none; min-height: 400px; animation: fadeIn 0.5s ease-out;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+        <h3 style="margin: 0; color: var(--primary-color);">Generated Documentation</h3>
+        <button class="btn btn-secondary" onclick="copyToClipboard()" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+            📋 Copy Markdown
+        </button>
+    </div>
+    <div id="markdownContent" class="markdown-body">
+        <!-- Documentation will appear here -->
+    </div>
+</div>
+
+<!-- Marked.js for Markdown Rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<style>
+    /* Spinner Animation */
+    @keyframes rotate {
+        100% { transform: rotate(360deg); }
+    }
+    @keyframes dash {
+        0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+        50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+        100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+    }
+    .spinner {
+        animation: rotate 2s linear infinite;
+        width: 24px;
+        height: 24px;
+    }
+    .path {
+        stroke: #ffffff;
+        stroke-linecap: round;
+        animation: dash 1.5s ease-in-out infinite;
+    }
+
+    /* Markdown Styles */
+    .markdown-body {
+        color: var(--text-color);
+        line-height: 1.8;
+    }
+    .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+        color: var(--text-color);
+        margin-top: 2rem;
+        border-bottom: 1px solid var(--glass-border);
+        padding-bottom: 0.5rem;
+    }
+    .markdown-body h1 { font-size: 2rem; }
+    .markdown-body h2 { font-size: 1.5rem; color: var(--primary-color); }
+    .markdown-body p { margin-bottom: 1rem; }
+    .markdown-body ul, .markdown-body ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+    .markdown-body li { margin-bottom: 0.5rem; }
+    .markdown-body pre {
+        background: #0f172a;
+        padding: 1.5rem;
+        border-radius: 0.8rem;
+        overflow-x: auto;
+        border: 1px solid var(--glass-border);
+        margin: 1.5rem 0;
+    }
+    .markdown-body code {
+        font-family: 'Consolas', monospace;
+        color: var(--accent-color);
+        background: rgba(59, 130, 246, 0.1); /* primary color with low opacity */
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+    }
+    .markdown-body pre code {
+        color: #e2e8f0;
+        background: transparent;
+        padding: 0;
+    }
+    .markdown-body blockquote {
+        border-left: 4px solid var(--accent-color);
+        padding-left: 1rem;
+        color: #94a3b8;
+        font-style: italic;
+    }
+</style>
+
+<script>
+    let generatedMarkdown = "";
+
+    async function generateDocs() {
+        const btn = document.getElementById('generateBtn');
+        const btnText = document.getElementById('btnText');
+        const btnIcon = document.getElementById('btnIcon');
+        const btnLoader = document.getElementById('btnLoader');
+        const resultContainer = document.getElementById('resultContainer');
+        const markdownContent = document.getElementById('markdownContent');
+
+        // UI State: Loading
+        btn.disabled = true;
+        btnText.innerText = 'Generating Documentation...';
+        btnIcon.style.display = 'none';
+        btnLoader.style.display = 'block';
+        resultContainer.style.display = 'none';
+
+        try {
+            const response = await fetch('/generate-docs-action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) throw new Error("Failed to generate docs");
+
+            const data = await response.json();
+            
+            // Store raw markdown for copy
+            generatedMarkdown = data.docs;
+            
+            // Render Markdown
+            markdownContent.innerHTML = marked.parse(generatedMarkdown);
+            
+            // Show Result
+            resultContainer.style.display = 'block';
+            
+            // Smooth scroll
+            setTimeout(() => {
+                resultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+
+        } catch (error) {
+            alert("Error generating documentation: " + error.message);
+        } finally {
+            // UI State: Reset
+            btn.disabled = false;
+            btnText.innerText = 'Regenerate Documentation';
+            btnIcon.style.display = 'inline';
+            btnLoader.style.display = 'none';
+        }
+    }
+
+    function copyToClipboard() {
+        if (!generatedMarkdown) {
+            // Fallback if raw markdown isn't captured (e.g. initial state)
+            generatedMarkdown = document.getElementById('markdownContent').innerText;
+        }
+        navigator.clipboard.writeText(generatedMarkdown).then(() => {
+            const btn = document.querySelector('.btn-secondary');
+            const originalText = btn.innerText;
+            btn.innerText = '✅ Copied!';
+            setTimeout(() => btn.innerText = originalText, 2000);
+        });
+    }
+</script>
+{% endblock %}
