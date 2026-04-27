@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Explanation - Cortex</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #030712;
+            color: #F9FAFB;
+        }
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(3, 7, 18, 0.98);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(79, 70, 229, 0.4);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4F46E5, #10B981);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .nav-links a {
+            color: #9CA3AF;
+            text-decoration: none;
+            margin-left: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 100px 2rem 4rem;
+        }
+        .back-link {
+            color: #4F46E5;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+        .explanation-box {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .explanation-box h2 {
+            margin-bottom: 1rem;
+            color: #4F46E5;
+        }
+        .explanation-content {
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+        .code-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .code-header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-bottom: 1px solid rgba(79, 70, 229, 0.3);
+        }
+        pre {
+            padding: 1.5rem;
+            overflow-x: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">CORTEX</div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/ask">Ask AI</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <a href="/dashboard" class="back-link">← Back to Dashboard</a>
+        
+        <div class="explanation-box">
+            <h2><i class="fas fa-robot"></i> AI Explanation: {{ file_path }}</h2>
+            <div class="explanation-content">{{ explanation | safe }}</div>
+        </div>
+        
+        <div class="code-box">
+            <div class="code-header">
+                <i class="fas fa-code"></i> File Content
+            </div>
+            <pre><code>{{ content }}</code></pre>
+        </div>
+    </div>
+</body>
+</html>

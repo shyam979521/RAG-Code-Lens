@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard - SATP</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="../home/index.html" class="logo">SATP</a>
+    <button class="nav-toggle">☰</button>
+    <ul class="nav-links">
+      <li><a href="../home/index.html">Home</a></li>
+      <li><a href="../achievements/index.html">Achievements</a></li>
+      <li><a href="index.html" class="active">Leaderboard</a></li>
+      <li><a href="../student-login/index.html">Login</a></li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <section>
+    <div class="container">
+      <h1>Leaderboard</h1>
+      <p style="color: #666; margin-bottom: 2rem;">Top performers ranked by achievement points.</p>
+
+      <!-- Filter Options -->
+      <div class="mb-4" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <input type="text" id="searchLeaderboard" placeholder="Search student..." 
+               style="padding: 0.75rem; border: 1px solid #e0e0e0; border-radius: 4px; flex: 1; min-width: 200px;">
+        <select id="filterClass" style="padding: 0.75rem; border: 1px solid #e0e0e0; border-radius: 4px;">
+          <option value="">All Classes</option>
+          <option value="10-A">Class 10-A</option>
+          <option value="10-B">Class 10-B</option>
+          <option value="11-A">Class 11-A</option>
+          <option value="12-A">Class 12-A</option>
+        </select>
+      </div>
+
+      <!-- Leaderboard Table -->
+      <div style="overflow-x: auto;">
+        <table id="leaderboard-table">
+          <thead>
+            <tr>
+              <th onclick="app.sortLeaderboard('rank')" style="cursor: pointer;">Rank</th>
+              <th onclick="app.sortLeaderboard('name')" style="cursor: pointer;">Student Name</th>
+              <th>Class</th>
+              <th onclick="app.sortLeaderboard('points')" style="cursor: pointer;">Points 📊</th>
+              <th>Achievements</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>#1</strong></td>
+              <td><strong>Jane Smith</strong></td>
+              <td>10-A</td>
+              <td><strong style="color: #0066cc;">8,750</strong></td>
+              <td>18</td>
+              <td><span style="background: #d4edda; color: #155724; padding: 0.25rem 0.75rem; border-radius: 4px;">🏆 Top Performer</span></td>
+            </tr>
+            <tr>
+              <td><strong>#2</strong></td>
+              <td><strong>Alex Chen</strong></td>
+              <td>10-B</td>
+              <td><strong style="color: #0066cc;">8,250</strong></td>
+              <td>16</td>
+              <td><span style="background: #e2f0ff; color: #004085; padding: 0.25rem 0.75rem; border-radius: 4px;">⭐ Excellent</span></td>
+            </tr>
+            <tr>
+              <td><strong>#3</strong></td>
+              <td><strong>Sarah Lee</strong></td>
+              <td>10-A</td>
+              <td><strong style="color: #0066cc;">7,950</strong></td>
+              <td>15</td>
+              <td><span style="background: #e2f0ff; color: #004085; padding: 0.25rem 0.75rem; border-radius: 4px;">⭐ Excellent</span></td>
+            </tr>
+            <tr>
+              <td><strong>#4</strong></td>
+              <td><strong>John Doe</strong></td>
+              <td>11-A</td>
+              <td><strong style="color: #0066cc;">7,500</strong></td>
+              <td>14</td>
+              <td><span style="background: #fff3cd; color: #856404; padding: 0.25rem 0.75rem; border-radius: 4px;">✓ Good</span></td>
+            </tr>
+            <tr>
+              <td><strong>#5</strong></td>
+              <td><strong>Mike Johnson</strong></td>
+              <td>10-B</td>
+              <td><strong style="color: #0066cc;">7,100</strong></td>
+              <td>13</td>
+              <td><span style="background: #fff3cd; color: #856404; padding: 0.25rem 0.75rem; border-radius: 4px;">✓ Good</span></td>
+            </tr>
+            <tr>
+              <td><strong>#6</strong></td>
+              <td><strong>Chris Wilson</strong></td>
+              <td>12-A</td>
+              <td><strong style="color: #0066cc;">6,850</strong></td>
+              <td>12</td>
+              <td><span style="background: #fff3cd; color: #856404; padding: 0.25rem 0.75rem; border-radius: 4px;">✓ Good</span></td>
+            </tr>
+            <tr>
+              <td><strong>#7</strong></td>
+              <td><strong>Emma Davis</strong></td>
+              <td>10-A</td>
+              <td><strong style="color: #0066cc;">6,500</strong></td>
+              <td>11</td>
+              <td><span style="background: #e7e8ea; color: #383d41; padding: 0.25rem 0.75rem; border-radius: 4px;">○ Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>#8</strong></td>
+              <td><strong>Michael Brown</strong></td>
+              <td>11-A</td>
+              <td><strong style="color: #0066cc;">6,200</strong></td>
+              <td>10</td>
+              <td><span style="background: #e7e8ea; color: #383d41; padding: 0.25rem 0.75rem; border-radius: 4px;">○ Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>#9</strong></td>
+              <td><strong>Lisa Anderson</strong></td>
+              <td>10-B</td>
+              <td><strong style="color: #0066cc;">5,950</strong></td>
+              <td>9</td>
+              <td><span style="background: #e7e8ea; color: #383d41; padding: 0.25rem 0.75rem; border-radius: 4px;">○ Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>#10</strong></td>
+              <td><strong>David Taylor</strong></td>
+              <td>12-A</td>
+              <td><strong style="color: #0066cc;">5,600</strong></td>
+              <td>8</td>
+              <td><span style="background: #e7e8ea; color: #383d41; padding: 0.25rem 0.75rem; border-radius: 4px;">○ Active</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-3 mt-4">
+        <div class="card text-center">
+          <h3>Total Students</h3>
+          <h2 style="color: #0066cc; font-size: 2.5rem;">256</h2>
+        </div>
+        <div class="card text-center">
+          <h3>Total Points Awarded</h3>
+          <h2 style="color: #0066cc; font-size: 2.5rem;">1.2M</h2>
+        </div>
+        <div class="card text-center">
+          <h3>Average Points</h3>
+          <h2 style="color: #0066cc; font-size: 2.5rem;">4,687</h2>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container text-center" style="padding: 2rem 5%;">
+      <p class="text-muted">© 2026 SATP. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="../app.js"></script>
+  <script>
+    // Search functionality
+    document.getElementById('searchLeaderboard').addEventListener('keyup', function() {
+      app.filterTableBySearch('searchLeaderboard', 'leaderboard-table', 1);
+    });
+
+    // Filter by class
+    document.getElementById('filterClass').addEventListener('change', function() {
+      const filterValue = this.value;
+      const rows = document.querySelectorAll('#leaderboard-table tbody tr');
+      
+      rows.forEach(row => {
+        const classCell = row.querySelectorAll('td')[2].textContent;
+        if (!filterValue || classCell.includes(filterValue)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Cortex</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #030712;
+            color: #F9FAFB;
+        }
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(3, 7, 18, 0.98);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(79, 70, 229, 0.4);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4F46E5, #10B981);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .nav-links a {
+            color: #9CA3AF;
+            text-decoration: none;
+            margin-left: 2rem;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover {
+            color: #4F46E5;
+        }
+        /* Logout button style */
+        .logout-btn {
+            color: #EF4444 !important;
+        }
+        .logout-btn:hover {
+            color: #dc2626 !important;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 100px 2rem 4rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            color: #9CA3AF;
+            margin-bottom: 2rem;
+        }
+        
+        /* AI Features Menu */
+        .ai-menu {
+            display: flex;
+            gap: 1rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+        .ai-btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+        .ai-btn-ask {
+            background: linear-gradient(135deg, #4F46E5, #8B5CF6);
+            color: white;
+        }
+        .ai-btn-search {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+        .ai-btn-readme {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: white;
+        }
+        .ai-btn-dep {
+            background: linear-gradient(135deg, #EC4899, #8B5CF6);
+            color: white;
+        }
+        .action-btn-small {
+            padding: 0.5rem 1rem !important;
+            font-size: 0.85rem !important;
+        }
+        .ai-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .upload-btn {
+            display: inline-block;
+            padding: 0.8rem 2rem;
+            background: #4F46E5;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            transition: all 0.3s;
+        }
+        .upload-btn:hover {
+            background: #4338CA;
+            transform: translateY(-2px);
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+        .alert-success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid #10B981;
+            color: #10B981;
+        }
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #EF4444;
+            color: #EF4444;
+        }
+        .project-card {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+        .project-card:hover {
+            border-color: #4F46E5;
+            box-shadow: 0 0 30px rgba(79, 70, 229, 0.3);
+        }
+        .project-header {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.2rem;
+            border-bottom: 1px solid rgba(79, 70, 229, 0.2);
+            gap: 1.5rem;
+        }
+        @media (max-width: 1000px) {
+            .project-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1.2rem;
+            }
+        }
+        .project-name {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #818CF8;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            min-width: 0;
+            max-width: 100%;
+        }
+        .project-name span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .project-actions {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            min-width: fit-content;
+        }
+        @media (max-width: 1000px) {
+            .project-actions {
+                justify-content: flex-start;
+                width: 100%;
+            }
+        }
+        .delete-project-btn {
+            background: rgba(239, 68, 68, 0.1);
+            color: #EF4444;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .delete-project-btn:hover {
+            background: #EF4444;
+            color: white;
+            transform: translateY(-2px);
+        }
+        .file-count {
+            background: rgba(79, 70, 229, 0.15);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #94A3B8;
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            white-space: nowrap;
+        }
+        .files-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+        .files-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .files-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        .files-list::-webkit-scrollbar-thumb {
+            background: rgba(79, 70, 229, 0.4);
+            border-radius: 10px;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            padding: 0.6rem;
+            background: rgba(79, 70, 229, 0.1);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .file-item:hover {
+            background: rgba(79, 70, 229, 0.3);
+        }
+        .file-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex: 1;
+            text-decoration: none;
+            color: #F9FAFB;
+        }
+        .file-icon {
+            font-size: 1.2rem;
+            width: 30px;
+        }
+        .file-info {
+            flex: 1;
+            overflow: hidden;
+        }
+        .file-name {
+            font-size: 0.9rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .file-folder {
+            font-size: 0.7rem;
+            color: #9CA3AF;
+        }
+        .file-size {
+            font-size: 0.8rem;
+            color: #9CA3AF;
+            margin-right: 0.5rem;
+        }
+        .delete-file-btn {
+            background: none;
+            border: none;
+            color: #EF4444;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0.3rem;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        .delete-file-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            transform: scale(1.1);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            background: rgba(17, 24, 39, 0.6);
+            border-radius: 20px;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            color: #4F46E5;
+            margin-bottom: 1rem;
+        }
+        .file-type-py { color: #FFD43B; }
+        .file-type-js { color: #F7DF1E; }
+        .file-type-html { color: #E34F26; }
+        .file-type-css { color: #1572B6; }
+        .file-type-json { color: #5E9C6E; }
+        .file-type-txt { color: #9CA3AF; }
+        .file-type-default { color: #4F46E5; }
+        
+        /* Explain button on file items */
+        .explain-file-btn {
+            background: linear-gradient(135deg, #4F46E5, #8B5CF6);
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            white-space: nowrap;
+        }
+        .explain-file-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        
+        .folder-group {
+            margin-top: 1rem;
+            border-left: 2px solid rgba(79, 70, 229, 0.3);
+            padding-left: 1rem;
+        }
+        .folder-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #4F46E5;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-folder-btn {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+            border: none;
+            padding: 0.2rem 0.5rem;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .delete-folder-btn:hover {
+            background: #EF4444;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .ai-menu {
+                flex-direction: column;
+            }
+            .ai-btn {
+                justify-content: center;
+            }
+        @media (max-width: 600px) {
+            .container {
+                padding-top: 80px;
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            .project-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .project-actions {
+                justify-content: center;
+                width: 100%;
+            }
+            .file-item {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            .file-link {
+                width: 100%;
+                justify-content: center;
+            }
+            .file-info {
+                text-align: center;
+            }
+            .ai-menu {
+                justify-content: center;
+            }
+            .ai-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">CORTEX</div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            {% if session.get('logged_in') %}
+                <a href="/dashboard">Dashboard</a>
+                <a href="/upload">Upload</a>
+                <a href="/dependencies">Dependencies</a>
+                <a href="/ask">Ask AI</a>
+                <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>📊 Your Projects</h1>
+        <p class="subtitle">Uploaded codebases ready for analysis</p>
+
+        <!-- Welcome message when logged in -->
+        {% if session.logged_in %}
+        <div class="alert alert-success" style="background: rgba(16, 185, 129, 0.15); padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; border: 1px solid rgba(16, 185, 129, 0.3);">
+            <i class="fas fa-user-circle"></i> Welcome back, <strong>{{ session.get('fullname') or session.get('user') }}</strong>!
+        </div>
+        {% endif %}
+
+        <!-- AI Features Menu -->
+        <div class="ai-menu">
+            <a href="/ask" class="ai-btn ai-btn-ask">
+                <i class="fas fa-robot"></i> 🤖 Ask AI Questions
+            </a>
+            <a href="/ai-search" class="ai-btn ai-btn-search">
+                <i class="fas fa-search"></i> 🔍 AI Semantic Search
+            </a>
+            <a href="/generate-readme" class="ai-btn ai-btn-readme">
+                <i class="fas fa-file-alt"></i> 📄 Generate README
+            </a>
+            <a href="/dependencies" class="ai-btn ai-btn-dep">
+                <i class="fas fa-project-diagram"></i> 📊 Dependency Analysis
+            </a>
+        </div>
+
+        {% if msg %}
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i> {{ msg }}
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        <a href="/upload" class="upload-btn">
+            <i class="fas fa-plus"></i> Upload New Project
+        </a>
+
+        {% if projects %}
+            {% for project in projects %}
+            <div class="project-card">
+                <div class="project-header">
+                    <div class="project-name">
+                        <i class="fas fa-folder-open"></i> <span>{{ project.name }}</span>
+                    </div>
+                    <div class="project-actions">
+                        <span class="file-count">
+                            <i class="fas fa-file"></i> {{ project.file_count }} files
+                        </span>
+                        <a href="/dependencies?project={{ project.name }}" class="ai-btn ai-btn-dep action-btn-small">
+                            <i class="fas fa-project-diagram"></i> Dependencies
+                        </a>
+                        <a href="/delete/project/{{ project.name }}" class="delete-project-btn" 
+                           onclick="return confirm('⚠️ Delete entire project {{ project.name }}? This cannot be undone!')">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="files-list">
+                    {% for file in project.files %}
+                    <div class="file-item">
+                        <a href="/view/{{ project.name }}/{{ file.path }}" class="file-link">
+                            <div class="file-icon">
+                                {% if file.name.endswith('.py') %}
+                                    <i class="fab fa-python file-type-py"></i>
+                                {% elif file.name.endswith('.js') %}
+                                    <i class="fab fa-js file-type-js"></i>
+                                {% elif file.name.endswith('.html') %}
+                                    <i class="fab fa-html5 file-type-html"></i>
+                                {% elif file.name.endswith('.css') %}
+                                    <i class="fab fa-css3-alt file-type-css"></i>
+                                {% elif file.name.endswith('.json') %}
+                                    <i class="fas fa-code file-type-json"></i>
+                                {% elif file.name.endswith('.txt') %}
+                                    <i class="fas fa-file-alt file-type-txt"></i>
+                                {% else %}
+                                    <i class="fas fa-file-code file-type-default"></i>
+                                {% endif %}
+                            </div>
+                            <div class="file-info">
+                                <div class="file-name" title="{{ file.path }}">{{ file.name }}</div>
+                                {% if file.folder != 'root' %}
+                                <div class="file-folder"><i class="fas fa-folder"></i> {{ file.folder }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="file-size">{{ (file.size / 1024)|round(1) }} KB</div>
+                        </a>
+                        <a href="/explain/{{ project.name }}/{{ file.path }}" class="explain-file-btn" title="Explain this file with AI">
+                            <i class="fas fa-robot"></i> Explain
+                        </a>
+                        <a href="/delete/file/{{ project.name }}/{{ file.path }}" class="delete-file-btn"
+                           onclick="return confirm('Delete {{ file.name }}?')" title="Delete file">
+                            <i class="fas fa-times-circle"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h3>No projects yet</h3>
+            <p>Upload your first ZIP file to get started!</p>
+            <a href="/upload" style="display: inline-block; margin-top: 1rem; color: #4F46E5;">Upload a project →</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Confirm delete for all delete buttons
+        document.querySelectorAll('.delete-project-btn, .delete-file-btn, .delete-folder-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const message = this.getAttribute('onclick');
+                if (message && !confirm(message.replace('return confirm(', '').replace(')', ''))) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

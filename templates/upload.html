@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Projects - Cortex</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #030712;
+            color: #F9FAFB;
+        }
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(3, 7, 18, 0.98);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(79, 70, 229, 0.4);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4F46E5, #10B981);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .nav-links a {
+            color: #9CA3AF;
+            text-decoration: none;
+            margin-left: 2rem;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover {
+            color: #4F46E5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 120px 2rem 4rem;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .subtitle {
+            text-align: center;
+            color: #9CA3AF;
+            margin-bottom: 2rem;
+        }
+        .upload-area {
+            border: 2px dashed rgba(79, 70, 229, 0.6);
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #4F46E5;
+            background: rgba(79, 70, 229, 0.1);
+            transform: scale(1.02);
+        }
+        .upload-area i {
+            font-size: 4rem;
+            color: #4F46E5;
+            margin-bottom: 1rem;
+        }
+        .upload-area h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .upload-area p {
+            color: #9CA3AF;
+        }
+        .file-info {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #10B981;
+        }
+        #fileInput {
+            display: none;
+        }
+        .progress-container {
+            margin-top: 2rem;
+            display: none;
+        }
+        .progress-item {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            gap: 1rem;
+        }
+        .progress-filename {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+            font-size: 0.9rem;
+        }
+        .progress-status {
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(79, 70, 229, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #4F46E5, #10B981);
+            transition: width 0.3s;
+        }
+        .result {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-radius: 10px;
+            display: none;
+        }
+        .result.success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid #10B981;
+            display: block;
+        }
+        .result.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #EF4444;
+            display: block;
+        }
+        .uploaded-list {
+            margin-top: 1rem;
+            padding-left: 1rem;
+        }
+        .uploaded-list li {
+            color: #10B981;
+            margin: 0.3rem 0;
+        }
+        .btn-back {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.8rem 2rem;
+            background: #4F46E5;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .btn-back:hover {
+            background: #4338CA;
+            transform: translateY(-2px);
+        }
+        .selected-files {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(79, 70, 229, 0.1);
+            border-radius: 10px;
+            display: none;
+        }
+        .selected-files ul {
+            margin-top: 0.5rem;
+            padding-left: 1.5rem;
+        }
+        .selected-files li {
+            margin: 0.2rem 0;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">CORTEX</div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            {% if session.get('logged_in') %}
+                <a href="/dashboard">Dashboard</a>
+                <a href="/dependencies">Dependencies</a>
+                <a href="/ask">Ask AI</a>
+                <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>📤 Upload Your Projects</h1>
+        <p class="subtitle">Upload one or multiple ZIP files at once</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <h3>Click or Drag & Drop</h3>
+            <p>Select one or multiple ZIP files containing your code</p>
+            <div class="file-info">
+                <i class="fas fa-info-circle"></i> Supports: .zip files only | Max size: 500MB total
+            </div>
+            <input type="file" id="fileInput" accept=".zip" multiple>
+        </div>
+
+        <div class="selected-files" id="selectedFiles">
+            <strong><i class="fas fa-list"></i> Selected files:</strong>
+            <ul id="selectedFilesList"></ul>
+        </div>
+
+        <div class="progress-container" id="progressContainer"></div>
+
+        <div class="result" id="result"></div>
+
+        <div style="text-align: center;">
+            <a href="/dashboard" class="btn-back">← Go to Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const progressContainer = document.getElementById('progressContainer');
+        const resultDiv = document.getElementById('result');
+        const selectedFilesDiv = document.getElementById('selectedFiles');
+        const selectedFilesList = document.getElementById('selectedFilesList');
+
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            
+            // Show selected files
+            selectedFilesList.innerHTML = '';
+            files.forEach(file => {
+                const li = document.createElement('li');
+                li.innerHTML = `<i class="fas fa-file-archive"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                selectedFilesList.appendChild(li);
+            });
+            selectedFilesDiv.style.display = 'block';
+            
+            await uploadFiles(files);
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#10B981';
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            uploadArea.style.borderColor = 'rgba(79, 70, 229, 0.6)';
+        });
+
+        uploadArea.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'rgba(79, 70, 229, 0.6)';
+            
+            const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.zip'));
+            if (files.length === 0) {
+                showResult('Please drop valid ZIP files only!', 'error');
+                return;
+            }
+            
+            // Show selected files
+            selectedFilesList.innerHTML = '';
+            files.forEach(file => {
+                const li = document.createElement('li');
+                li.innerHTML = `<i class="fas fa-file-archive"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                selectedFilesList.appendChild(li);
+            });
+            selectedFilesDiv.style.display = 'block';
+            
+            await uploadFiles(files);
+        });
+
+        async function uploadFiles(files) {
+            const formData = new FormData();
+            files.forEach(file => {
+                formData.append('files', file);
+            });
+
+            // Show progress for each file
+            progressContainer.innerHTML = '';
+            const progressItems = {};
+            
+            files.forEach(file => {
+                const progressItem = document.createElement('div');
+                progressItem.className = 'progress-item';
+                progressItem.id = `progress-${file.name.replace(/[^a-zA0-9]/g, '_')}`;
+                progressItem.innerHTML = `
+                    <div class="progress-header">
+                        <span class="progress-filename"><i class="fas fa-file-archive"></i> ${file.name}</span>
+                        <span class="progress-status">Pending...</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                `;
+                progressContainer.appendChild(progressItem);
+                progressItems[file.name] = progressItem;
+            });
+            
+            progressContainer.style.display = 'block';
+            resultDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update progress for all files
+                    files.forEach(file => {
+                        const progressItem = progressItems[file.name];
+                        const fill = progressItem.querySelector('.progress-fill');
+                        const status = progressItem.querySelector('.progress-status');
+                        fill.style.width = '100%';
+                        status.innerHTML = '<i class="fas fa-check-circle" style="color: #10B981;"></i> Complete!';
+                        status.style.color = '#10B981';
+                    });
+                    
+                    let message = `<strong>✅ ${data.message}</strong><br>Uploaded projects:`;
+                    message += '<ul class="uploaded-list">';
+                    if (data.uploaded_projects) {
+                        data.uploaded_projects.forEach(project => {
+                            message += `<li><i class="fas fa-folder"></i> ${project.name} (${project.file_count} files)</li>`;
+                        });
+                    }
+                    message += '</ul>';
+                    
+                    if (data.errors && data.errors.length > 0) {
+                        message += '<br><strong>⚠️ Errors:</strong><ul class="uploaded-list" style="color: #EF4444;">';
+                        data.errors.forEach(error => {
+                            message += `<li><i class="fas fa-exclamation-circle"></i> ${error}</li>`;
+                        });
+                        message += '</ul>';
+                    }
+                    
+                    showResult(message, 'success');
+                    
+                    // Reset file input
+                    fileInput.value = '';
+                    selectedFilesDiv.style.display = 'none';
+                    
+                    // Redirect after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = '/dashboard?msg=Uploads+complete!';
+                    }, 3000);
+                } else {
+                    // Show error for each file
+                    files.forEach(file => {
+                        const progressItem = progressItems[file.name];
+                        const status = progressItem.querySelector('.progress-status');
+                        status.innerHTML = '<i class="fas fa-times-circle" style="color: #EF4444;"></i> Failed';
+                        status.style.color = '#EF4444';
+                    });
+                    showResult(data.error || 'Upload failed!', 'error');
+                }
+            } catch (error) {
+                files.forEach(file => {
+                    const progressItem = progressItems[file.name];
+                    const status = progressItem.querySelector('.progress-status');
+                    status.innerHTML = '<i class="fas fa-times-circle" style="color: #EF4444;"></i> Network Error';
+                    status.style.color = '#EF4444';
+                });
+                showResult('Network error! Please try again.', 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                ${message}
+            `;
+        }
+    </script>
+</body>
+</html>
