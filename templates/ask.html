@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ask AI - Cortex</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #030712;
+            color: #F9FAFB;
+        }
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(3, 7, 18, 0.98);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(79, 70, 229, 0.4);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4F46E5, #10B981);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .nav-links a {
+            color: #9CA3AF;
+            text-decoration: none;
+            margin-left: 2rem;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover {
+            color: #4F46E5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 120px 2rem 4rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            color: #9CA3AF;
+            margin-bottom: 2rem;
+        }
+        
+        /* Project Selection Card */
+        .project-selector {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .selector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .selector-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .project-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        .project-btn {
+            background: rgba(79, 70, 229, 0.15);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 30px;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .project-btn:hover {
+            background: rgba(79, 70, 229, 0.3);
+            transform: translateY(-2px);
+        }
+        .project-btn.active {
+            background: #4F46E5;
+            border-color: #4F46E5;
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.5);
+        }
+        .no-projects-msg {
+            color: #9CA3AF;
+            padding: 1rem;
+            text-align: center;
+        }
+        .selected-info {
+            margin-top: 1rem;
+            padding: 0.8rem;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            display: none;
+        }
+        .selected-info.show {
+            display: block;
+        }
+        
+        /* Upload Section */
+        .upload-section {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .upload-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .upload-header h3 {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .upload-header:hover {
+            background: rgba(79, 70, 229, 0.1);
+        }
+        .upload-area {
+            border: 2px dashed rgba(79, 70, 229, 0.5);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 1rem;
+        }
+        .upload-area:hover {
+            border-color: #4F46E5;
+            background: rgba(79, 70, 229, 0.1);
+        }
+        .upload-area i {
+            font-size: 3rem;
+            color: #4F46E5;
+            margin-bottom: 1rem;
+        }
+        .upload-area.dragover {
+            border-color: #10B981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        .file-input {
+            display: none;
+        }
+        .upload-progress {
+            margin-top: 1rem;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(79, 70, 229, 0.3);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #4F46E5, #10B981);
+            transition: width 0.3s;
+        }
+        .upload-status {
+            font-size: 0.85rem;
+            color: #10B981;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+        
+        /* Query Box */
+        .query-box {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        textarea {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            resize: vertical;
+            font-family: 'Inter', sans-serif;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #4F46E5;
+        }
+        button {
+            margin-top: 1rem;
+            padding: 0.8rem 2rem;
+            background: #4F46E5;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        button:hover:not(:disabled) {
+            background: #4338CA;
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Answer Box */
+        .answer-box {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        .answer-content {
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+        .sources {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(79, 70, 229, 0.3);
+            font-size: 0.9rem;
+            color: #10B981;
+        }
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            display: none;
+        }
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .btn-back {
+            display: inline-block;
+            margin-top: 2rem;
+            color: #4F46E5;
+            text-decoration: none;
+        }
+        .refresh-btn {
+            background: none;
+            border: 1px solid #4F46E5;
+            color: #4F46E5;
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+            margin: 0;
+        }
+        .refresh-btn:hover {
+            background: #4F46E5;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">CORTEX</div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            {% if session.get('logged_in') %}
+                <a href="/dashboard">Dashboard</a>
+                <a href="/upload">Upload</a>
+                <a href="/dependencies">Dependencies</a>
+                <a href="/ai-search">AI Search</a>
+                <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>🤖 Ask AI About Your Code</h1>
+        <p class="subtitle">Select a project, then ask questions about that specific codebase</p>
+
+        <!-- Project Selection -->
+        <div class="project-selector">
+            <div class="selector-header">
+                <h3><i class="fas fa-folder-open"></i> Select Project</h3>
+                <button class="refresh-btn" onclick="loadProjects()"><i class="fas fa-sync-alt"></i> Refresh</button>
+            </div>
+            <div id="projectButtons" class="project-buttons">
+                <div class="no-projects-msg">Loading projects...</div>
+            </div>
+            <div id="selectedInfo" class="selected-info">
+                <i class="fas fa-check-circle"></i> Currently analyzing: <strong id="selectedProjectName">None</strong>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <div class="upload-header" onclick="toggleUpload()">
+                <h3><i class="fas fa-cloud-upload-alt"></i> Upload New Project</h3>
+                <i class="fas fa-chevron-down" id="uploadToggleIcon"></i>
+            </div>
+            <div id="uploadArea" class="upload-area" style="display: none;">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h4>Click or Drag & Drop ZIP files</h4>
+                <p style="color: #9CA3AF; font-size: 0.9rem; margin-top: 0.5rem;">Upload ZIP files containing your code</p>
+                <input type="file" id="fileInput" accept=".zip" multiple>
+                <div class="upload-progress" id="uploadProgress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="upload-status" id="uploadStatus"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Query Box -->
+        <div class="query-box">
+            <form id="askForm">
+                <textarea name="query" id="queryInput" rows="4" placeholder="Example: What does this codebase do? How does authentication work? Where are the API endpoints?"></textarea>
+                <button type="submit" id="askButton">
+                    <i class="fas fa-paper-plane"></i> Ask AI
+                </button>
+            </form>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p style="margin-top: 1rem;">AI is analyzing your code...</p>
+        </div>
+
+        <!-- Answer Box -->
+        <div id="answerBox" style="display: none;"></div>
+
+        <a href="/dashboard" class="btn-back">← Back to Dashboard</a>
+    </div>
+
+    <script>
+        let selectedProject = null;
+        let uploadVisible = false;
+
+        // Load projects from server
+        async function loadProjects() {
+            try {
+                const response = await fetch('/api/projects');
+                const data = await response.json();
+                
+                const projectButtons = document.getElementById('projectButtons');
+                
+                if (data.projects && data.projects.length > 0) {
+                    let buttonsHtml = '';
+                    data.projects.forEach(project => {
+                        const isActive = (selectedProject === project.name);
+                        buttonsHtml += `
+                            <div class="project-btn ${isActive ? 'active' : ''}" onclick="selectProject('${project.name}')">
+                                <i class="fas fa-folder"></i> ${project.name}
+                                <span style="font-size: 0.7rem; opacity: 0.7;">(${project.file_count} files)</span>
+                            </div>
+                        `;
+                    });
+                    projectButtons.innerHTML = buttonsHtml;
+                    
+                    // Auto-select first project if none selected
+                    if (!selectedProject && data.projects.length > 0) {
+                        selectProject(data.projects[0].name);
+                    }
+                } else {
+                    projectButtons.innerHTML = '<div class="no-projects-msg"><i class="fas fa-inbox"></i> No projects found. Upload a ZIP file to get started.</div>';
+                    document.getElementById('selectedInfo').classList.remove('show');
+                }
+            } catch (error) {
+                console.log('Error loading projects:', error);
+                document.getElementById('projectButtons').innerHTML = '<div class="no-projects-msg">Error loading projects. Please refresh.</div>';
+            }
+        }
+
+        // Select a project
+        function selectProject(projectName) {
+            selectedProject = projectName;
+            
+            // Update UI
+            document.querySelectorAll('.project-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.includes(projectName)) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Show selected info
+            document.getElementById('selectedProjectName').textContent = projectName;
+            document.getElementById('selectedInfo').classList.add('show');
+            
+            console.log(`Selected project: ${projectName}`);
+        }
+
+        // Toggle upload section
+        function toggleUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const icon = document.getElementById('uploadToggleIcon');
+            
+            if (uploadVisible) {
+                uploadArea.style.display = 'none';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                uploadArea.style.display = 'block';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            }
+            uploadVisible = !uploadVisible;
+        }
+
+        // Upload files
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        
+        if (uploadArea) {
+            uploadArea.addEventListener('click', (e) => {
+                if (e.target === uploadArea || e.target.parentElement === uploadArea || e.target.tagName === 'I' || e.target.tagName === 'H4' || e.target.tagName === 'P') {
+                    fileInput.click();
+                }
+            });
+        }
+        
+        if (fileInput) {
+            fileInput.addEventListener('change', async (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length === 0) return;
+                await uploadFiles(files);
+            });
+        }
+        
+        // Drag and drop
+        if (uploadArea) {
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', (e) => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.zip'));
+                if (files.length > 0) {
+                    await uploadFiles(files);
+                } else {
+                    alert('Please drop ZIP files only!');
+                }
+            });
+        }
+        
+        async function uploadFiles(files) {
+            const formData = new FormData();
+            files.forEach(file => {
+                formData.append('files', file);
+            });
+            
+            const progress = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('progressFill');
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            if (progress) progress.style.display = 'block';
+            if (progressFill) progressFill.style.width = '0%';
+            if (uploadStatus) uploadStatus.innerHTML = 'Uploading...';
+            
+            let progressValue = 0;
+            const interval = setInterval(() => {
+                progressValue += 10;
+                if (progressValue <= 90 && progressFill) {
+                    progressFill.style.width = progressValue + '%';
+                }
+            }, 200);
+            
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                clearInterval(interval);
+                const data = await response.json();
+                
+                if (data.success && uploadStatus) {
+                    if (progressFill) progressFill.style.width = '100%';
+                    uploadStatus.innerHTML = `✅ Uploaded ${data.uploaded_projects.length} project(s)!`;
+                    
+                    // Reload projects and auto-select new one
+                    await loadProjects();
+                    
+                    setTimeout(() => {
+                        if (progress) progress.style.display = 'none';
+                    }, 2000);
+                } else if (uploadStatus) {
+                    uploadStatus.innerHTML = `❌ Error: ${data.error}`;
+                }
+            } catch (error) {
+                clearInterval(interval);
+                if (uploadStatus) uploadStatus.innerHTML = `❌ Network error: ${error.message}`;
+            }
+            
+            if (fileInput) fileInput.value = '';
+        }
+        
+        // Ask question about selected project
+        document.getElementById('askForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                alert('Please enter a question.');
+                return;
+            }
+            
+            if (!selectedProject) {
+                alert('Please select a project first.');
+                return;
+            }
+            
+            const loading = document.getElementById('loading');
+            const answerBox = document.getElementById('answerBox');
+            const askButton = document.getElementById('askButton');
+            
+            loading.style.display = 'block';
+            answerBox.style.display = 'none';
+            askButton.disabled = true;
+            askButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Thinking...';
+            
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        query: query,
+                        project: selectedProject 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                loading.style.display = 'none';
+                
+                if (data.success) {
+                    let sourcesHtml = '';
+                    if (data.sources && data.sources.length > 0) {
+                        sourcesHtml = `
+                            <div class="sources">
+                                <i class="fas fa-file-code"></i> Sources: ${data.sources.join(', ')}
+                            </div>
+                        `;
+                    }
+                    
+                    answerBox.innerHTML = `
+                        <div class="answer-box">
+                            <h3><i class="fas fa-robot"></i> AI Answer</h3>
+                            <div style="font-size: 0.8rem; color: #4F46E5; margin-bottom: 1rem;">
+                                <i class="fas fa-folder"></i> Project: ${selectedProject}
+                            </div>
+                            <div class="answer-content">${formatAnswer(data.answer)}</div>
+                            ${sourcesHtml}
+                        </div>
+                    `;
+                    answerBox.style.display = 'block';
+                } else {
+                    answerBox.innerHTML = `
+                        <div class="answer-box">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Error</h3>
+                            <div class="answer-content">${data.error || 'Could not get answer. Please try again.'}</div>
+                        </div>
+                    `;
+                    answerBox.style.display = 'block';
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                answerBox.innerHTML = `
+                    <div class="answer-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Network Error</h3>
+                        <div class="answer-content">${error.message}</div>
+                    </div>
+                `;
+                answerBox.style.display = 'block';
+            } finally {
+                askButton.disabled = false;
+                askButton.innerHTML = '<i class="fas fa-paper-plane"></i> Ask AI';
+            }
+        });
+        
+        function formatAnswer(answer) {
+            if (!answer) return '';
+            let formatted = answer
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code style="background: rgba(79,70,229,0.2); padding: 0.2rem 0.4rem; border-radius: 4px;">$1</code>')
+                .replace(/\n\n/g, '<br><br>')
+                .replace(/\n/g, '<br>');
+            return formatted;
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProjects();
+        });
+    </script>
+</body>
+</html>

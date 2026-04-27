@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Semantic Search - Cortex</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #030712;
+            color: #F9FAFB;
+        }
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(3, 7, 18, 0.98);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(79, 70, 229, 0.4);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4F46E5, #10B981);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .nav-links a {
+            color: #9CA3AF;
+            text-decoration: none;
+            margin-left: 2rem;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover {
+            color: #4F46E5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 120px 2rem 4rem;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #4F46E5, #10B981);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .subtitle {
+            color: #9CA3AF;
+            margin-bottom: 2rem;
+            font-size: 1.2rem;
+        }
+        
+        /* Search Box */
+        .search-container {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .search-input-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .search-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(79, 70, 229, 0.4);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #4F46E5;
+            box-shadow: 0 0 20px rgba(79, 70, 229, 0.3);
+        }
+        .search-btn {
+            padding: 0.8rem 2rem;
+            background: linear-gradient(135deg, #4F46E5, #8B5CF6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4);
+        }
+        
+        /* Suggestions */
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+        .suggestion-chip {
+            background: rgba(79, 70, 229, 0.15);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .suggestion-chip:hover {
+            background: rgba(79, 70, 229, 0.3);
+            transform: scale(1.05);
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            display: none;
+        }
+        .loading i {
+            font-size: 2rem;
+            color: #4F46E5;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Results */
+        .results-container {
+            display: none;
+        }
+        .result-card {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s;
+        }
+        .result-card:hover {
+            border-color: #4F46E5;
+            transform: translateY(-2px);
+        }
+        .result-answer {
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+        .result-sources {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(79, 70, 229, 0.2);
+            font-size: 0.85rem;
+            color: #10B981;
+        }
+        .source-tag {
+            background: rgba(16, 185, 129, 0.1);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+        }
+        
+        /* No results */
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            background: rgba(17, 24, 39, 0.6);
+            border-radius: 20px;
+        }
+        .no-results i {
+            font-size: 3rem;
+            color: #9CA3AF;
+            margin-bottom: 1rem;
+        }
+        
+        /* Upload Reminder */
+        .upload-reminder {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid #F59E0B;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .upload-reminder i {
+            font-size: 1.5rem;
+            color: #F59E0B;
+        }
+        .upload-reminder a {
+            color: #F59E0B;
+            text-decoration: none;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            color: #4F46E5;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">CORTEX</div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            {% if session.get('logged_in') %}
+                <a href="/dashboard">Dashboard</a>
+                <a href="/upload">Upload</a>
+                <a href="/dependencies">Dependencies</a>
+                <a href="/ask">Ask AI</a>
+                <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>🔍 AI Semantic Search</h1>
+        <p class="subtitle">Search your codebase using natural language</p>
+
+        <!-- Upload Reminder -->
+        <div class="upload-reminder" id="uploadReminder" style="display: none;">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <span>No code files found. <a href="/upload">Upload a ZIP file</a> to get started!</span>
+        </div>
+
+        <!-- Search Box -->
+        <div class="search-container">
+            <div class="search-input-group">
+                <input type="text" class="search-input" id="searchInput" placeholder="e.g., How does authentication work? Where are the API endpoints?">
+                <button class="search-btn" onclick="performSearch()">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+            <div class="suggestions">
+                <span class="suggestion-chip" onclick="setQuery('What does this codebase do?')">📌 What does this codebase do?</span>
+                <span class="suggestion-chip" onclick="setQuery('How does the upload feature work?')">📌 How does upload work?</span>
+                <span class="suggestion-chip" onclick="setQuery('Find all database connections')">📌 Find database connections</span>
+                <span class="suggestion-chip" onclick="setQuery('Explain the main functions')">📌 Explain main functions</span>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p style="margin-top: 1rem;">Searching your codebase...</p>
+        </div>
+
+        <!-- Results -->
+        <div class="results-container" id="resultsContainer">
+            <div id="resultsContent"></div>
+        </div>
+
+        <a href="/dashboard" class="back-link">← Back to Dashboard</a>
+    </div>
+
+    <script>
+        // Check if any files exist when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            await checkFilesExist();
+            
+            // Allow Enter key to search
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        });
+        
+        async function checkFilesExist() {
+            try {
+                const response = await fetch('/api/projects');
+                const data = await response.json();
+                
+                if (data.projects && data.projects.length === 0) {
+                    document.getElementById('uploadReminder').style.display = 'flex';
+                }
+            } catch (error) {
+                console.log('Error checking files:', error);
+            }
+        }
+        
+        function setQuery(query) {
+            document.getElementById('searchInput').value = query;
+            performSearch();
+        }
+        
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            
+            if (!query) {
+                alert('Please enter a question to search.');
+                return;
+            }
+            
+            const loading = document.getElementById('loading');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            loading.style.display = 'block';
+            resultsContainer.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+                
+                const data = await response.json();
+                
+                loading.style.display = 'block';
+                
+                if (data.success) {
+                    let sourcesHtml = '';
+                    if (data.sources && data.sources.length > 0) {
+                        sourcesHtml = `
+                            <div class="result-sources">
+                                <i class="fas fa-file-code"></i> Sources:
+                                ${data.sources.map(s => `<span class="source-tag">${s}</span>`).join('')}
+                            </div>
+                        `;
+                    }
+                    
+                    resultsContent.innerHTML = `
+                        <div class="result-card">
+                            <div class="result-answer">${formatAnswer(data.answer)}</div>
+                            ${sourcesHtml}
+                        </div>
+                    `;
+                    resultsContainer.style.display = 'block';
+                } else {
+                    resultsContent.innerHTML = `
+                        <div class="no-results">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <h3>No Results Found</h3>
+                            <p>${data.error || 'Could not find relevant code. Try a different question or upload more code files.'}</p>
+                            <a href="/upload" style="color: #4F46E5; margin-top: 1rem; display: inline-block;">Upload Code →</a>
+                        </div>
+                    `;
+                    resultsContainer.style.display = 'block';
+                }
+            } catch (error) {
+                resultsContent.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Connection Error</h3>
+                        <p>${error.message}</p>
+                        <button onclick="performSearch()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #4F46E5; border: none; border-radius: 8px; color: white; cursor: pointer;">Try Again</button>
+                    </div>
+                `;
+                resultsContainer.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+        
+        function formatAnswer(answer) {
+            if (!answer) return '';
+            
+            // Convert markdown-like formatting to HTML
+            let formatted = answer
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code style="background: rgba(79,70,229,0.2); padding: 0.2rem 0.4rem; border-radius: 4px;">$1</code>')
+                .replace(/\n\n/g, '<br><br>')
+                .replace(/\n/g, '<br>');
+            
+            return formatted;
+        }
+    </script>
+</body>
+</html>

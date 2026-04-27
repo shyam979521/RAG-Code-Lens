@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ file_path }} - Cortex</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #030712;
+            color: #F9FAFB;
+        }
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(3, 7, 18, 0.98);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(79, 70, 229, 0.4);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4F46E5, #10B981);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .nav-links a {
+            color: #9CA3AF;
+            text-decoration: none;
+            margin-left: 2rem;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover {
+            color: #4F46E5;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 100px 2rem 4rem;
+        }
+        .back-link {
+            color: #4F46E5;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-explain {
+            background: linear-gradient(135deg, #4F46E5, #8B5CF6);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-explain:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(79, 70, 229, 0.4);
+        }
+        .btn-copy {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid #10B981;
+            color: #10B981;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .btn-copy:hover {
+            background: rgba(16, 185, 129, 0.4);
+        }
+        .btn-download {
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid #F59E0B;
+            color: #F59E0B;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn-download:hover {
+            background: rgba(245, 158, 11, 0.4);
+        }
+        
+        /* Explanation Box */
+        .explanation-box {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(79, 70, 229, 0.4);
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .explanation-header {
+            background: rgba(79, 70, 229, 0.2);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(79, 70, 229, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .explanation-header h3 {
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .explanation-content {
+            padding: 1.5rem;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            display: none;
+        }
+        .explanation-content.show {
+            display: block;
+        }
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+            display: none;
+        }
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* File Header */
+        .file-header {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .file-path {
+            font-family: 'Fira Code', monospace;
+            color: #4F46E5;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+        .file-stats {
+            display: flex;
+            gap: 1rem;
+            color: #9CA3AF;
+            font-size: 0.9rem;
+        }
+        
+        /* Code Container */
+        .code-container {
+            background: rgba(17, 24, 39, 0.9);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .code-header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.8rem 1.5rem;
+            border-bottom: 1px solid rgba(79, 70, 229, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .lang-tag {
+            font-size: 0.8rem;
+            padding: 0.2rem 0.8rem;
+            background: rgba(79, 70, 229, 0.2);
+            border-radius: 20px;
+        }
+        pre {
+            padding: 1.5rem;
+            margin: 0;
+            overflow-x: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #E5E7EB;
+        }
+        code {
+            font-family: 'Fira Code', monospace;
+        }
+        
+        /* Line Numbers */
+        .line-numbers {
+            display: flex;
+        }
+        .line-numbers pre {
+            padding-right: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .action-buttons {
+                justify-content: center;
+            }
+            .file-header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">CORTEX</div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            {% if session.get('logged_in') %}
+                <a href="/dashboard">Dashboard</a>
+                <a href="/ask">Ask AI</a>
+                <a href="/upload">Upload</a>
+                <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container">
+        <a href="/dashboard" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="btn-explain" id="explainBtn" onclick="explainFile()">
+                <i class="fas fa-robot"></i> Explain with AI
+            </button>
+            <button class="btn-copy" onclick="copyCode()">
+                <i class="fas fa-copy"></i> Copy Code
+            </button>
+            <a href="#" class="btn-download" id="downloadBtn">
+                <i class="fas fa-download"></i> Download File
+            </a>
+        </div>
+
+        <!-- AI Explanation Box (Initially Hidden) -->
+        <div class="explanation-box" id="explanationBox" style="display: none;">
+            <div class="explanation-header" onclick="toggleExplanation()">
+                <h3><i class="fas fa-robot"></i> AI Explanation</h3>
+                <i class="fas fa-chevron-down" id="toggleIcon"></i>
+            </div>
+            <div class="loading-spinner" id="loadingSpinner">
+                <i class="fas fa-spinner fa-spin"></i> AI is analyzing your code...
+            </div>
+            <div class="explanation-content" id="explanationContent">
+            </div>
+        </div>
+
+        <!-- File Header -->
+        <div class="file-header">
+            <div>
+                <i class="fas fa-file-code"></i>
+                <span class="file-path">{{ file_path }}</span>
+            </div>
+            <div class="file-stats">
+                <span><i class="fas fa-code"></i> {{ content.split('\n')|length }} lines</span>
+                <span><i class="fas fa-database"></i> {{ (content|length / 1024)|round(1) }} KB</span>
+                <span><i class="fas fa-language"></i> {{ file_path.split('.')[-1]|upper }}</span>
+            </div>
+        </div>
+
+        <!-- Code Container -->
+        <div class="code-container">
+            <div class="code-header">
+                <span><i class="fas fa-code"></i> Source Code</span>
+                <span class="lang-tag">{{ file_path.split('.')[-1] }}</span>
+            </div>
+            <pre id="codeContent"><code>{{ content }}</code></pre>
+        </div>
+    </div>
+
+    <script>
+        let explanationVisible = false;
+        
+        // Toggle explanation visibility
+        function toggleExplanation() {
+            const content = document.getElementById('explanationContent');
+            const icon = document.getElementById('toggleIcon');
+            
+            if (explanationVisible) {
+                content.classList.remove('show');
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+                explanationVisible = false;
+            } else {
+                content.classList.add('show');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+                explanationVisible = true;
+            }
+        }
+        
+        // Explain file with AI
+        async function explainFile() {
+            const explanationBox = document.getElementById('explanationBox');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const explanationContent = document.getElementById('explanationContent');
+            const explainBtn = document.getElementById('explainBtn');
+            
+            // Show the explanation box
+            explanationBox.style.display = 'block';
+            loadingSpinner.style.display = 'block';
+            explanationContent.innerHTML = '';
+            explanationContent.classList.remove('show');
+            explanationVisible = false;
+            
+            // Disable button while loading
+            explainBtn.disabled = true;
+            explainBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+            
+            try {
+                // Get the explanation from the server
+                const response = await fetch(`/api/explain-file`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        project_name: '{{ project_name }}',
+                        file_path: '{{ file_path }}',
+                        content: `{{ content|replace("'", "\\'")|replace("\n", "\\n") }}`
+                    })
+                });
+                
+                const data = await response.json();
+                
+                loadingSpinner.style.display = 'none';
+                
+                if (data.success) {
+                    // Format the explanation with markdown-like styling
+                    let formattedExplanation = data.explanation
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\n\n/g, '<br><br>')
+                        .replace(/\n/g, '<br>');
+                    
+                    explanationContent.innerHTML = formattedExplanation;
+                    toggleExplanation(); // Auto-expand
+                } else {
+                    explanationContent.innerHTML = `<p style="color: #EF4444;">Error: ${data.error}</p>`;
+                    toggleExplanation();
+                }
+            } catch (error) {
+                loadingSpinner.style.display = 'none';
+                explanationContent.innerHTML = `<p style="color: #EF4444;">Network error: ${error.message}</p>`;
+                toggleExplanation();
+            } finally {
+                // Re-enable button
+                explainBtn.disabled = false;
+                explainBtn.innerHTML = '<i class="fas fa-robot"></i> Explain with AI';
+            }
+        }
+        
+        // Copy code to clipboard
+        function copyCode() {
+            const code = document.getElementById('codeContent').innerText;
+            navigator.clipboard.writeText(code);
+            
+            // Show temporary notification
+            const btn = event.target.closest('.btn-copy');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 2000);
+        }
+        
+        // Download file
+        document.getElementById('downloadBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const code = document.getElementById('codeContent').innerText;
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '{{ file_path.split("/")[-1] }}';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        
+        // Add line numbers to code (optional)
+        function addLineNumbers() {
+            const pre = document.getElementById('codeContent');
+            const lines = pre.innerText.split('\n');
+            const lineNumbers = lines.map((_, i) => i + 1).join('\n');
+            // You can implement line numbers if needed
+        }
+    </script>
+</body>
+</html>
