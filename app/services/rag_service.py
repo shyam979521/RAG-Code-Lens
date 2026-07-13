@@ -1,7 +1,7 @@
 from app.services.llm_service import LLMService
 from app.services.embedding_service import EmbeddingService
 from app.services.vector_service import VectorService
-import os
+from app.models.models import File
 
 class RagService:
     def __init__(self):
@@ -45,6 +45,106 @@ class RagService:
         
         print("  No vectors were created")
         return 0
+
+    def _build_code_context(self, query, project_name=None, max_files=6, max_chars_per_file=1200):
+        """Build a compact code context from uploaded files."""
+        files_query = File.query
+        if project_name:
+            files_query = files_query.filter_by(project_name=project_name)
+
+        files = files_query.order_by(File.created_at.desc()).all()
+        if not files:
+            return "", []
+
+        query_lower = query.lower()
+        scored_files = []
+
+        for file in files:
+            content = (file.content or "").strip()
+            filename = (file.filename or "").lower()
+            filepath = (file.filepath or "").lower()
+            score = 0
+
+            if filename and filename in query_lower:
+                score += 5
+            if filepath and filepath in query_lower:
+                score += 5
+
+            if content:
+                lowered_content = content.lower()
+                for token in query_lower.split():
+                    if len(token) > 2 and token in lowered_content:
+                        score += 1
+
+            scored_files.append((score, file))
+
+        scored_files.sort(
+            key=lambda item: (
+                item[0],
+                len((item[1].content or "").strip())
+            ),
+            reverse=True
+        )
+
+        context_parts = []
+        source_names = []
+
+        for _, file in scored_files[:max_files]:
+            content = (file.content or "").strip()
+            if not content:
+                continue
+
+            snippet = content[:max_chars_per_file]
+            if len(content) > max_chars_per_file:
+                snippet += "\n... (truncated)"
+
+            display_path = file.filepath or file.filename or "unknown"
+            source_names.append(display_path)
+            context_parts.append(
+                f"File: {display_path}\nProject: {file.project_name}\nCode:\n{snippet}"
+            )
+
+        return "\n\n---\n\n".join(context_parts), source_names
+
+    def _generate_local_summary(self, project_name=None):
+        """Create a small deterministic summary when the LLM gives a generic answer."""
+        files_query = File.query
+        if project_name:
+            files_query = files_query.filter_by(project_name=project_name)
+
+        files = files_query.order_by(File.created_at.asc()).all()
+        if not files:
+            return ""
+
+        file_names = [file.filename for file in files if file.filename]
+        file_paths = [file.filepath for file in files if file.filepath]
+        lower_paths = " ".join(path.lower() for path in file_paths)
+
+        summary_lines = []
+        if project_name:
+            summary_lines.append(f'This project appears to be "{project_name}".')
+        else:
+            summary_lines.append("This uploaded codebase contains the following structure.")
+
+        if any(name == 'app.py' for name in file_names):
+            summary_lines.append("It looks like a Flask web application with an app entry file.")
+        if 'templates' in lower_paths:
+            summary_lines.append("It includes HTML templates for rendered pages.")
+        if 'static' in lower_paths:
+            summary_lines.append("It includes static frontend assets such as CSS or JavaScript.")
+
+        visible_files = ", ".join(file_names[:6])
+        if visible_files:
+            summary_lines.append(f"Main files found: {visible_files}.")
+
+        for file in files:
+            content = (file.content or "").lower()
+            if "@app.route" in content:
+                route_count = content.count("@app.route")
+                summary_lines.append(f'The main app file defines around {route_count} route(s), so this project serves web pages.')
+                break
+
+        return " ".join(summary_lines)
     
     def answer_query(self, query, project_name=None):
         """Answer a question about a specific project"""
@@ -52,29 +152,55 @@ class RagService:
         if project_name:
             print(f"   Project: {project_name}")
         
-        # Build prompt with project context
-        if project_name:
-            prompt = f"""You are analyzing a project called "{project_name}". 
-Answer this question about the codebase: {query}
+        code_context, source_names = self._build_code_context(query, project_name)
+        if not code_context:
+            return {
+                'answer': "No uploaded code files were found for analysis. Please upload a project first.",
+                'sources': [],
+                'num_sources': 0
+            }
 
-Provide a clear, helpful answer based on the code."""
-        else:
-            prompt = f"""Answer this question about the codebase: {query}
+        scope = f'the project "{project_name}"' if project_name else "the uploaded codebase"
+        prompt = f"""You are analyzing {scope}.
 
-Provide a clear, helpful answer."""
+Question: {query}
+
+Use only the code context below to answer. If the answer is not present in the provided code, say that clearly.
+
+Code Context:
+{code_context}
+
+Provide a clear, direct answer and mention relevant files when helpful."""
         
         try:
             answer = self.llm_service.generate_text(prompt)
+            if answer and answer.lower().startswith("error:"):
+                fallback_summary = self._generate_local_summary(project_name)
+                if fallback_summary:
+                    answer = fallback_summary
+            generic_markers = [
+                "i don't see any code",
+                "please share the code",
+                "you haven't provided",
+                "no information about your project",
+                "no information about the codebase",
+                "don't have any information"
+            ]
+            if answer and any(marker in answer.lower() for marker in generic_markers):
+                fallback_summary = self._generate_local_summary(project_name)
+                if fallback_summary:
+                    answer = fallback_summary
             return {
                 'answer': answer,
-                'sources': [project_name] if project_name else [],
-                'num_sources': 1 if project_name else 0
+                'sources': source_names,
+                'num_sources': len(source_names)
             }
         except Exception as e:
+            fallback_summary = self._generate_local_summary(project_name)
             return {
-                'answer': f"Error: {str(e)}",
-                'sources': [],
-                'num_sources': 0
+                'answer': fallback_summary or f"Error: {str(e)}",
+                'sources': source_names if fallback_summary else [],
+                'num_sources': len(source_names) if fallback_summary else 0
             }
     
     def explain_file(self, filename, content):

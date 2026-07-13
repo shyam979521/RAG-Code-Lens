@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cortex - AI-Powered Codebase Understanding</title>
+    <title>RAG-Code Lens - AI-Powered Codebase Understanding</title>
     
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -111,6 +111,15 @@
 
         .page-content.active {
             display: block;
+        }
+
+        .site-footer {
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(79, 70, 229, 0.2);
         }
 
         @keyframes fadeIn {
@@ -1243,6 +1252,82 @@
             font-size: 1rem;
         }
 
+        .team-section {
+            margin: 5rem 0 1rem;
+        }
+
+        .team-section h2 {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .team-section .section-intro {
+            max-width: 760px;
+            margin: 0 auto 3rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.15rem;
+            line-height: 1.8;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        .team-card {
+            background: var(--surface);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 28px;
+            padding: 2.5rem 2.25rem;
+            text-align: center;
+            transition: all 0.4s;
+            box-shadow: 0 0 30px rgba(79, 70, 229, 0.08);
+        }
+
+        .team-card:hover {
+            transform: translateY(-10px);
+            border-color: #4F46E5;
+            box-shadow: 0 0 40px rgba(79, 70, 229, 0.22);
+        }
+
+        .team-avatar {
+            width: 112px;
+            height: 112px;
+            margin: 0 auto 1.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at top, rgba(16, 185, 129, 0.9), rgba(79, 70, 229, 0.95));
+            color: white;
+            font-size: 2.3rem;
+            font-weight: 800;
+            border: 3px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 0 30px rgba(79, 70, 229, 0.28);
+        }
+
+        .team-card h3 {
+            font-size: 1.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .team-role {
+            color: #10B981;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .team-card p {
+            color: var(--text-secondary);
+            font-size: 1.02rem;
+            line-height: 1.8;
+        }
+
         /* Dashboard Page */
         .dashboard-header {
             padding: 4rem 0;
@@ -1980,6 +2065,7 @@
             .rag-grid,
             .features-grid,
             .objectives-grid,
+            .team-grid,
             .projects-grid,
             .footer-grid,
             .contact-grid,
@@ -2097,7 +2183,7 @@
                             </defs>
                         </svg>
                     </div>
-                    <span class="logo-text">CORTEX</span>
+                    <span class="logo-text">RAG-Code Lens</span>
                 </div>
             </div>
             
@@ -2170,10 +2256,10 @@
                                 <span class="dot yellow"></span>
                                 <span class="dot green"></span>
                             </div>
-                            <span class="window-title">cortex-analysis/main.py</span>
+                            <span class="window-title">rag-code-lens-analysis/main.py</span>
                         </div>
                         <div class="window-content">
-                            <div class="code-line"><span class="line-num">1</span> <span class="keyword">from</span> cortex <span class="keyword">import</span> <span class="function">CodebaseAnalyzer</span></div>
+                            <div class="code-line"><span class="line-num">1</span> <span class="keyword">from</span> rag_code_lens <span class="keyword">import</span> <span class="function">CodebaseAnalyzer</span></div>
                             <div class="code-line"><span class="line-num">2</span></div>
                             <div class="code-line"><span class="line-num">3</span> <span class="comment"># Initialize with RAG pipeline</span></div>
                             <div class="code-line"><span class="line-num">4</span> analyzer = <span class="function">CodebaseAnalyzer</span>(<span class="string">"./my-project"</span>)</div>
@@ -2311,10 +2397,10 @@
                 </div>
             </section>
 
-            <!-- Why Choose Cortex Section -->
+            <!-- Why Choose RAG-Code Lens Section -->
             <section class="features-section">
                 <div class="content-container">
-                    <h2 class="section-title">Why Choose <span class="gradient-text">Cortex</span></h2>
+                    <h2 class="section-title">Why Choose <span class="gradient-text">RAG-Code Lens</span></h2>
                     <p class="section-subtitle">
                         Built for developers who need to understand complex codebases quickly and accurately
                     </p>
@@ -2370,7 +2456,7 @@
             <section class="cta-section">
                 <div class="cta-content">
                     <h2>Start <span class="gradient-text">understanding</span> your code</h2>
-                    <p>Join thousands of developers who use Cortex to ship faster and onboard smoother</p>
+                    <p>Join thousands of developers who use RAG-Code Lens to ship faster and onboard smoother</p>
                     <div class="cta-buttons">
                         <button class="btn btn-primary btn-large" onclick="navigateTo('signup')">
                             Get Started Free →
@@ -2387,14 +2473,14 @@
         <div id="about-page" class="page-content">
             <div class="content-container">
                 <div class="about-hero">
-                    <h1>About <span class="gradient-text">Cortex</span></h1>
+                    <h1>About <span class="gradient-text">RAG-Code Lens</span></h1>
                     <p>AI-powered codebase understanding for modern development teams</p>
                 </div>
 
                 <div class="mission-grid">
                     <div>
                         <h2>Our Mission</h2>
-                        <p>Cortex was built to eliminate the friction of onboarding, debugging, and documenting complex codebases. Our RAG-based approach ensures that every answer is grounded in your actual code, providing accurate, contextual understanding at scale. We believe that understanding code shouldn't be the hardest part of software development.</p>
+                        <p>RAG-Code Lens was built to eliminate the friction of onboarding, debugging, and documenting complex codebases. Our RAG-based approach ensures that every answer is grounded in your actual code, providing accurate, contextual understanding at scale. We believe that understanding code shouldn't be the hardest part of software development.</p>
                     </div>
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -2445,6 +2531,25 @@
                         <p>Improve developer productivity by providing accurate contextual answers about the codebase</p>
                     </div>
                 </div>
+
+                <section class="team-section">
+                    <h2>Meet the Team</h2>
+                    <p class="section-intro">The project is developed by a focused two-member team with a shared goal of making codebase understanding simpler, faster, and more practical for students and developers.</p>
+                    <div class="team-grid">
+                        <div class="team-card">
+                            <div class="team-avatar">SP</div>
+                            <h3>Shyam Prakash Yadav</h3>
+                            <div class="team-role">Co-Developer</div>
+                            <p>Contributed to building RAG-Code Lens as a practical academic project focused on intelligent code understanding, streamlined analysis, and a polished end-user experience.</p>
+                        </div>
+                        <div class="team-card">
+                            <div class="team-avatar">TM</div>
+                            <h3>Tanishq Mishra</h3>
+                            <div class="team-role">Co-Developer</div>
+                            <p>Contributed to shaping RAG-Code Lens into a clear and usable project experience, helping present the platform as a strong BCA project for real-world code exploration.</p>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
 
@@ -2452,7 +2557,7 @@
         <div id="dashboard-page" class="page-content">
             <div class="content-container">
                 <div class="dashboard-header">
-                    <h1>Welcome back, Sarah</h1>
+                    <h1>Welcome back</h1>
                     <div class="quick-stats">
                         <div class="quick-stat-item">
                             <div class="quick-stat-value">3</div>
@@ -2529,7 +2634,7 @@
             <div class="content-container">
                 <div class="docs-header">
                     <h1>Documentation</h1>
-                    <p>Everything you need to master Cortex</p>
+                    <p>Everything you need to master RAG-Code Lens</p>
                 </div>
 
                 <div class="docs-search">
@@ -2571,8 +2676,8 @@
                     </div>
 
                     <div class="docs-content">
-                        <h2>Introduction to Cortex</h2>
-                        <p>Cortex is a Retrieval-Augmented Generation (RAG) based system designed to help developers understand large codebases quickly. By combining semantic search with AI-powered explanations, Cortex reduces the time needed to onboard new team members, debug issues, and document complex systems.</p>
+                        <h2>Introduction to RAG-Code Lens</h2>
+                        <p>RAG-Code Lens is a Retrieval-Augmented Generation (RAG) based system designed to help developers understand large codebases quickly. By combining semantic search with AI-powered explanations, RAG-Code Lens reduces the time needed to onboard new team members, debug issues, and document complex systems.</p>
                         
                         <h3>Key Features</h3>
                         <ul>
@@ -2584,7 +2689,7 @@
                         </ul>
 
                         <h3>Quick Start Example</h3>
-                        <pre><code>from cortex import CodebaseAnalyzer
+                        <pre><code>from rag_code_lens import CodebaseAnalyzer
 
 # Initialize with your project
 analyzer = CodebaseAnalyzer("./my-project")
@@ -2601,7 +2706,7 @@ analyzer.generate_readme()
 analyzer.generate_api_docs()</code></pre>
 
                         <h3>Architecture Overview</h3>
-                        <p>Cortex uses a sophisticated RAG pipeline that processes your code in several stages:</p>
+                        <p>RAG-Code Lens uses a sophisticated RAG pipeline that processes your code in several stages:</p>
                         <ol>
                             <li><strong>Parsing:</strong> Code is parsed into an AST (Abstract Syntax Tree)</li>
                             <li><strong>Chunking:</strong> Logical chunks are created (functions, classes, modules)</li>
@@ -2640,16 +2745,15 @@ analyzer.generate_api_docs()</code></pre>
                             <div class="contact-icon"><i class="fas fa-envelope"></i></div>
                             <div>
                                 <h4>Email</h4>
-                                <p>sarah.faiq@erauniversity.edu.in</p>
-                                <p>support@cortex.dev</p>
+                                <p>shyam@bbduniversity.edu.in</p>
                             </div>
                         </div>
                         <div class="contact-item">
                             <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
                             <div>
                                 <h4>Office</h4>
-                                <p>ERA University</p>
-                                <p>Sarfarazganj, Lucknow</p>
+                                <p>BBD University</p>
+                                <p>Chinhat, Lucknow</p>
                             </div>
                         </div>
                         <div class="contact-item">
@@ -2697,7 +2801,7 @@ analyzer.generate_api_docs()</code></pre>
                     <div class="faq-grid">
                         <div class="faq-item">
                             <h3>What programming languages are supported?</h3>
-                            <p>Cortex supports 15+ languages including Python, JavaScript, TypeScript, Java, Go, Rust, C++, C#, PHP, Ruby, Swift, and Kotlin.</p>
+                            <p>RAG-Code Lens supports 15+ languages including Python, JavaScript, TypeScript, Java, Go, Rust, C++, C#, PHP, Ruby, Swift, and Kotlin.</p>
                         </div>
                         <div class="faq-item">
                             <h3>Is my code stored on your servers?</h3>
@@ -2713,7 +2817,7 @@ analyzer.generate_api_docs()</code></pre>
                         </div>
                         <div class="faq-item">
                             <h3>Can I use it with my team?</h3>
-                            <p>Yes! Cortex includes team collaboration features, shared queries, and organization-wide insights.</p>
+                            <p>Yes! RAG-Code Lens includes team collaboration features, shared queries, and organization-wide insights.</p>
                         </div>
                         <div class="faq-item">
                             <h3>Is there a free trial?</h3>
@@ -2802,9 +2906,9 @@ analyzer.generate_api_docs()</code></pre>
                 <div class="footer-grid">
                     <div class="footer-col">
                         <div class="footer-logo">
-                            <span>CORTEX</span>
+                            <span>RAG-Code Lens</span>
                         </div>
-                        <p>AI-powered codebase understanding for modern development teams.<br>BCA Project by Sarah Faiq (850248), ERA University.<br>Built with ♥ by Sarah Faiq</p>
+                        <p>AI-powered codebase understanding for modern development teams.<br>BCA Project by Shyam Prakash Yadav &amp; Tanishq Mishra, BBD University.</p>
                     </div>
                     <div class="footer-col">
                         <h4>Product</h4>
@@ -2829,7 +2933,7 @@ analyzer.generate_api_docs()</code></pre>
                     </div>
                 </div>
                 <div class="footer-bottom">
-                    <p>© 2026 Cortex. All rights reserved. Built with ♥ by Sarah Faiq.</p>
+                    <p>&copy; 2026 RAG-Code Lens. All rights reserved.</p>
                     <div class="social-links">
                         <a href="#"><i class="fab fa-github"></i></a>
                         <a href="#"><i class="fab fa-twitter"></i></a>
@@ -2841,7 +2945,9 @@ analyzer.generate_api_docs()</code></pre>
         </footer>
     </div>
 
-   <script>
+    <footer class="site-footer">&copy; 2026 RAG-Code Lens. Built for smarter code understanding.</footer>
+
+    <script>
         // Navigation function
         function navigateTo(page) {
             // Hide all pages

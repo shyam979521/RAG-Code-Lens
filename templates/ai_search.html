@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Semantic Search - Cortex</title>
+    <title>AI Semantic Search - RAG-Code Lens</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -52,6 +52,13 @@
             margin: 0 auto;
             padding: 120px 2rem 4rem;
         }
+        .site-footer {
+            text-align: center;
+            padding: 1.5rem 2rem 2rem;
+            color: #9CA3AF;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(79, 70, 229, 0.2);
+        }
         h1 {
             font-size: 3rem;
             margin-bottom: 0.5rem;
@@ -73,6 +80,32 @@
             border-radius: 20px;
             padding: 2rem;
             margin-bottom: 2rem;
+        }
+        .project-select-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .project-select-row label {
+            color: #D1D5DB;
+            font-weight: 600;
+        }
+        .project-select {
+            min-width: 240px;
+            padding: 0.8rem 1rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(79, 70, 229, 0.4);
+            border-radius: 12px;
+            color: white;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+        }
+        .project-select:focus {
+            outline: none;
+            border-color: #4F46E5;
+            box-shadow: 0 0 20px rgba(79, 70, 229, 0.3);
         }
         .search-input-group {
             display: flex;
@@ -225,14 +258,13 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="logo">CORTEX</div>
+        <div class="logo">RAG-Code Lens</div>
         <div class="nav-links">
             <a href="/">Home</a>
             {% if session.get('logged_in') %}
                 <a href="/dashboard">Dashboard</a>
                 <a href="/upload">Upload</a>
                 <a href="/dependencies">Dependencies</a>
-                <a href="/ask">Ask AI</a>
                 <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
             {% else %}
                 <a href="/login">Login</a>
@@ -253,6 +285,12 @@
 
         <!-- Search Box -->
         <div class="search-container">
+            <div class="project-select-row">
+                <label for="projectSelect"><i class="fas fa-folder-open"></i> Project</label>
+                <select id="projectSelect" class="project-select">
+                    <option value="">All uploaded projects</option>
+                </select>
+            </div>
             <div class="search-input-group">
                 <input type="text" class="search-input" id="searchInput" placeholder="e.g., How does authentication work? Where are the API endpoints?">
                 <button class="search-btn" onclick="performSearch()">
@@ -281,6 +319,8 @@
         <a href="/dashboard" class="back-link">← Back to Dashboard</a>
     </div>
 
+    <footer class="site-footer">&copy; 2026 RAG-Code Lens. Built for smarter code understanding.</footer>
+
     <script>
         // Check if any files exist when page loads
         document.addEventListener('DOMContentLoaded', async function() {
@@ -298,9 +338,21 @@
             try {
                 const response = await fetch('/api/projects');
                 const data = await response.json();
+                const projectSelect = document.getElementById('projectSelect');
                 
                 if (data.projects && data.projects.length === 0) {
                     document.getElementById('uploadReminder').style.display = 'flex';
+                    projectSelect.innerHTML = '<option value="">No projects available</option>';
+                    return;
+                }
+
+                if (data.projects && data.projects.length > 0) {
+                    const options = ['<option value="">All uploaded projects</option>'];
+                    data.projects.forEach(project => {
+                        options.push(`<option value="${project.name}">${project.name} (${project.file_count} files)</option>`);
+                    });
+                    projectSelect.innerHTML = options.join('');
+                    projectSelect.value = data.projects[0].name;
                 }
             } catch (error) {
                 console.log('Error checking files:', error);
@@ -314,6 +366,7 @@
         
         async function performSearch() {
             const query = document.getElementById('searchInput').value.trim();
+            const selectedProject = document.getElementById('projectSelect').value;
             
             if (!query) {
                 alert('Please enter a question to search.');
@@ -333,7 +386,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ query: query })
+                    body: JSON.stringify({ query: query, project: selectedProject })
                 });
                 
                 const data = await response.json();
@@ -350,9 +403,14 @@
                             </div>
                         `;
                     }
+
+                    const scopeHtml = selectedProject
+                        ? `<div style="font-size: 0.85rem; color: #4F46E5; margin-bottom: 1rem;"><i class="fas fa-folder"></i> Project: ${selectedProject}</div>`
+                        : '';
                     
                     resultsContent.innerHTML = `
                         <div class="result-card">
+                            ${scopeHtml}
                             <div class="result-answer">${formatAnswer(data.answer)}</div>
                             ${sourcesHtml}
                         </div>

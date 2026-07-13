@@ -24,7 +24,7 @@ from app.models.models import File, Dependency, User
 app = Flask(__name__)
 
 # Configuration
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
@@ -55,6 +55,14 @@ with app.app_context():
 
 # Allowed extensions
 ALLOWED_EXTENSIONS = {'zip'}
+IGNORED_DIRECTORIES = {'__pycache__', '.git', 'node_modules', 'venv', '.venv'}
+IGNORED_FILE_SUFFIXES = ('.pyc', '.pyo')
+
+def should_skip_directory(dirname):
+    return dirname in IGNORED_DIRECTORIES or dirname.startswith('.') or dirname.startswith('__')
+
+def should_skip_file(filename):
+    return filename.startswith('.') or filename.startswith('__') or filename.endswith(IGNORED_FILE_SUFFIXES)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -83,6 +91,8 @@ def force_delete_file(file_path):
 def remove_empty_folders(folder_path):
     """Remove all empty folders recursively"""
     try:
+        root_path = os.path.abspath(folder_path)
+        upload_root = os.path.abspath(app.config['UPLOAD_FOLDER'])
         for root, dirs, files in os.walk(folder_path, topdown=False):
             for dir_name in dirs:
                 dir_path = os.path.join(root, dir_name)
@@ -91,6 +101,14 @@ def remove_empty_folders(folder_path):
                         os.rmdir(dir_path)
                 except:
                     pass
+            try:
+                current_root = os.path.abspath(root)
+                if current_root != upload_root and current_root != root_path and os.path.exists(root) and not os.listdir(root):
+                    os.rmdir(root)
+            except:
+                pass
+        if root_path != upload_root and os.path.exists(folder_path) and not os.listdir(folder_path):
+            os.rmdir(folder_path)
     except:
         pass
 
@@ -181,8 +199,9 @@ def dashboard():
                 all_files = []
                 try:
                     for root, dirs, files in os.walk(item_path):
+                        dirs[:] = [d for d in dirs if not should_skip_directory(d)]
                         for file in files:
-                            if not file.startswith('.') and not file.startswith('__'):
+                            if not should_skip_file(file):
                                 try:
                                     file_path = os.path.join(root, file)
                                     relative_path = os.path.relpath(file_path, item_path)
@@ -261,12 +280,8 @@ def do_register():
     try:
         db.session.add(new_user)
         db.session.commit()
-        
-        # Auto-login after registration
-        session['user'] = email
-        session['fullname'] = fullname
-        session['logged_in'] = True
-        return redirect(url_for('dashboard', msg=f'Welcome {fullname}! Registration successful!'))
+        session.clear()
+        return redirect(url_for('login', msg='Registration successful! Please login to continue.'))
     except Exception as e:
         db.session.rollback()
         return redirect(url_for('register', error=f'Registration failed: {str(e)}'))
@@ -309,6 +324,10 @@ def api_upload():
             file.save(filepath)
             
             extract_folder = os.path.join(app.config['UPLOAD_FOLDER'], project_name)
+
+            File.query.filter_by(project_name=project_name).delete()
+            Dependency.query.filter_by(project_name=project_name).delete()
+            db.session.commit()
             
             if os.path.exists(extract_folder):
                 force_delete_folder(extract_folder)
@@ -325,7 +344,10 @@ def api_upload():
                 # Index all files in the extracted folder
                 indexed_count = 0
                 for root, dirs, files_in_zip in os.walk(extract_folder):
+                    dirs[:] = [d for d in dirs if not should_skip_directory(d)]
                     for f in files_in_zip:
+                        if should_skip_file(f):
+                            continue
                         if f.endswith(('.py', '.js', '.html', '.css', '.txt', '.md', '.json')):
                             file_path = os.path.join(root, f)
                             try:
@@ -354,8 +376,9 @@ def api_upload():
                 # Count total files
                 file_count = 0
                 for root, dirs, files_in_zip in os.walk(extract_folder):
+                    dirs[:] = [d for d in dirs if not should_skip_directory(d)]
                     for f in files_in_zip:
-                        if not f.startswith('.') and not f.startswith('__'):
+                        if not should_skip_file(f):
                             file_count += 1
                 
                 uploaded_projects.append({
@@ -414,6 +437,13 @@ def delete_file(project_name, file_path):
     
     if os.path.exists(full_path):
         force_delete_file(full_path)
+        normalized_path = os.path.normpath(full_path)
+        File.query.filter_by(project_name=project_name, filepath=normalized_path).delete()
+        Dependency.query.filter(
+            (Dependency.project_name == project_name) &
+            ((Dependency.parent_file == os.path.basename(file_path)) | (Dependency.child_file == os.path.basename(file_path)))
+        ).delete(synchronize_session=False)
+        db.session.commit()
         folder_to_clean = os.path.dirname(full_path)
         remove_empty_folders(folder_to_clean)
         return redirect(url_for('dashboard', msg=f'File deleted successfully!'))
@@ -470,7 +500,7 @@ def explain_file_route(project_name, file_path):
     if not AI_AVAILABLE:
         return "⚠️ AI features are not available. Please check your API key in config.py"
     
-    full_path = os.path.join('uploads', project_name, file_path)
+    full_path = os.path.join(app.config['UPLOAD_FOLDER'], project_name, file_path)
     
     if os.path.exists(full_path):
         try:
@@ -497,15 +527,16 @@ def generate_readme():
         return "⚠️ AI features are not available. Please check your API key in config.py"
     
     all_files = []
-    uploads_path = 'uploads'
+    uploads_path = app.config['UPLOAD_FOLDER']
     
     if os.path.exists(uploads_path):
         for project in os.listdir(uploads_path):
             project_path = os.path.join(uploads_path, project)
             if os.path.isdir(project_path):
                 for root, dirs, files in os.walk(project_path):
+                    dirs[:] = [d for d in dirs if not should_skip_directory(d)]
                     for file in files:
-                        if not file.startswith('.'):
+                        if not should_skip_file(file):
                             all_files.append({
                                 'name': file,
                                 'project': project,
@@ -566,8 +597,9 @@ def api_projects():
             if os.path.isdir(item_path):
                 file_list = []
                 for root, dirs, files in os.walk(item_path):
+                    dirs[:] = [d for d in dirs if not should_skip_directory(d)]
                     for file in files:
-                        if not file.startswith('.'):
+                        if not should_skip_file(file):
                             file_path = os.path.join(root, file)
                             relative_path = os.path.relpath(file_path, item_path)
                             file_list.append({
@@ -590,7 +622,7 @@ def api_projects():
 def debug_index():
     """Force index all uploaded files"""
     results = []
-    uploads_path = 'uploads'
+    uploads_path = app.config['UPLOAD_FOLDER']
     file_id = 1
     
     if os.path.exists(uploads_path):
@@ -598,8 +630,9 @@ def debug_index():
             project_path = os.path.join(uploads_path, project)
             if os.path.isdir(project_path):
                 for root, dirs, files in os.walk(project_path):
+                    dirs[:] = [d for d in dirs if not should_skip_directory(d)]
                     for file in files:
-                        if file.endswith(('.py', '.js', '.html', '.css', '.txt', '.md', '.json')):
+                        if not should_skip_file(file) and file.endswith(('.py', '.js', '.html', '.css', '.txt', '.md', '.json')):
                             file_path = os.path.join(root, file)
                             try:
                                 with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:

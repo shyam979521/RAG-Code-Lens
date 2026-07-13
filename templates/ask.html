@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ask AI - Cortex</title>
+    <title>Ask AI - RAG-Code Lens</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -51,6 +51,13 @@
             max-width: 1000px;
             margin: 0 auto;
             padding: 120px 2rem 4rem;
+        }
+        .site-footer {
+            text-align: center;
+            padding: 1.5rem 2rem 2rem;
+            color: #9CA3AF;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(79, 70, 229, 0.2);
         }
         h1 {
             font-size: 2.5rem;
@@ -297,7 +304,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="logo">CORTEX</div>
+        <div class="logo">RAG-Code Lens</div>
         <div class="nav-links">
             <a href="/">Home</a>
             {% if session.get('logged_in') %}
@@ -315,7 +322,7 @@
 
     <div class="container">
         <h1>🤖 Ask AI About Your Code</h1>
-        <p class="subtitle">Select a project, then ask questions about that specific codebase</p>
+        <p class="subtitle">Select a project, then ask questions about that specific codebase.</p>
 
         <!-- Project Selection -->
         <div class="project-selector">
@@ -373,9 +380,16 @@
         <a href="/dashboard" class="btn-back">← Back to Dashboard</a>
     </div>
 
+    <footer class="site-footer">&copy; 2026 RAG-Code Lens. Built for smarter code understanding.</footer>
+
     <script>
         let selectedProject = null;
         let uploadVisible = false;
+        const askForm = document.getElementById('askForm');
+        const queryInput = document.getElementById('queryInput');
+        const askButton = document.getElementById('askButton');
+        const loading = document.getElementById('loading');
+        const answerBox = document.getElementById('answerBox');
 
         // Load projects from server
         async function loadProjects() {
@@ -544,10 +558,17 @@
         }
         
         // Ask question about selected project
-        document.getElementById('askForm').addEventListener('submit', async (e) => {
+        queryInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                askForm.requestSubmit();
+            }
+        });
+
+        askForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const query = document.getElementById('queryInput').value.trim();
+            const query = queryInput.value.trim();
             if (!query) {
                 alert('Please enter a question.');
                 return;
@@ -557,10 +578,6 @@
                 alert('Please select a project first.');
                 return;
             }
-            
-            const loading = document.getElementById('loading');
-            const answerBox = document.getElementById('answerBox');
-            const askButton = document.getElementById('askButton');
             
             loading.style.display = 'block';
             answerBox.style.display = 'none';
@@ -604,6 +621,7 @@
                         </div>
                     `;
                     answerBox.style.display = 'block';
+                    queryInput.value = '';
                 } else {
                     answerBox.innerHTML = `
                         <div class="answer-box">
@@ -625,6 +643,7 @@
             } finally {
                 askButton.disabled = false;
                 askButton.innerHTML = '<i class="fas fa-paper-plane"></i> Ask AI';
+                queryInput.focus();
             }
         });
         

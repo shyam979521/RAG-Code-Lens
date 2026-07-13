@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dependency Analysis - Cortex</title>
+    <title>Dependency Analysis - RAG-Code Lens</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -29,6 +29,13 @@
             color: var(--text);
             line-height: 1.5;
             overflow-x: hidden;
+        }
+        .site-footer {
+            text-align: center;
+            padding: 1.5rem 2rem 2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(79, 70, 229, 0.2);
         }
         .background-container {
             position: fixed;
@@ -272,15 +279,14 @@
     </div>
 
     <nav class="navbar">
-        <div class="logo">CORTEX</div>
+        <div class="logo">RAG-Code Lens</div>
         <div class="nav-links">
             <a href="/">Home</a>
             {% if session.get('logged_in') %}
                 <a href="/dashboard">Dashboard</a>
                 <a href="/upload">Upload</a>
                 <a href="/dependencies" class="active">Dependencies</a>
-                <a href="/ask">Ask AI</a>
-                <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i>Logout</a>
             {% else %}
                 <a href="/login">Login</a>
                 <a href="/register">Register</a>
@@ -343,6 +349,8 @@
     </div>
 
     <div id="toast" class="toast"></div>
+
+    <footer class="site-footer">&copy; 2026 RAG-Code Lens. Built for smarter code understanding.</footer>
 
     <script>
         const rebuildBtn = document.getElementById('rebuildBtn');
