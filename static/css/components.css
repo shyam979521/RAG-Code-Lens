@@ -1,0 +1,16 @@
+.button { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; min-height: 2.8rem; padding: .72rem 1rem; border: 1px solid transparent; border-radius: var(--radius-md); font-weight: 700; font-size: .92rem; transition: transform var(--ease), border-color var(--ease), background var(--ease), box-shadow var(--ease); }
+.button:hover { transform: translateY(-2px); }
+.button-primary { color: #0b0c12; background: linear-gradient(135deg, var(--primary-strong), #72e7d5); box-shadow: 0 10px 30px rgba(132,117,255,.25); }
+.button-primary:hover { box-shadow: 0 16px 34px rgba(132,117,255,.4); }
+.button-secondary { color: var(--text); border-color: var(--border); background: rgba(255,255,255,.04); }
+.button-secondary:hover { border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.08); }
+.card { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); box-shadow: var(--shadow-sm); }
+.glass { background: linear-gradient(135deg, rgba(255,255,255,.1), rgba(255,255,255,.025)); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.feature-card { padding: 1.45rem; transition: transform var(--ease), border-color var(--ease), background var(--ease); }
+.feature-card:hover { transform: translateY(-5px); border-color: rgba(132,117,255,.5); background: rgba(27,33,51,.92); }
+.icon-chip { display: grid; width: 2.65rem; height: 2.65rem; place-items: center; margin-bottom: 1.1rem; color: var(--accent); border: 1px solid rgba(78,225,193,.25); border-radius: .75rem; background: rgba(78,225,193,.08); font-size: 1.15rem; }
+.feature-card h3 { margin: 0 0 .5rem; font-size: 1.05rem; }
+.feature-card p { margin: 0; color: var(--text-muted); font-size: .94rem; }
+.status-dot { width: .48rem; height: .48rem; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 .22rem rgba(80,216,144,.12); }
+.brand { display: inline-flex; align-items: center; gap: .7rem; font-weight: 800; letter-spacing: -.03em; }
+.brand-mark { display: grid; width: 2rem; height: 2rem; place-items: center; border-radius: .65rem; color: #0a0c13; background: linear-gradient(135deg, var(--primary-strong), var(--accent)); box-shadow: 0 6px 20px rgba(132,117,255,.28); }

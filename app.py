@@ -3,13 +3,10 @@ import os
 import zipfile
 import shutil
 import time
-import stat
 from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-from functools import wraps
 
 # Import Config first
-from config import Config
+from app.config import Config
 
 # Then import AI Services
 from app.services.rag_service import RagService
@@ -20,13 +17,24 @@ from app.services.dependency_service import DependencyService
 # Database
 from app import db
 from app.models.models import File, Dependency, User
+from app.services.project_service import ProjectService
+from app.services.auth_service import AuthService
+from app.utils.auth import login_required
+from app.utils.filesystem import (
+    allowed_file,
+    force_delete_file,
+    force_delete_folder,
+    remove_empty_folders as _remove_empty_folders,
+    should_skip_directory,
+    should_skip_file,
+)
 
 app = Flask(__name__)
 
 # Configuration
 app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+app.config['MAX_CONTENT_LENGTH'] = Config.MAX_UPLOAD_SIZE
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = Config.SEND_FILE_MAX_AGE_DEFAULT
 
 # Session secret key for login/logout
 app.secret_key = Config.SECRET_KEY
@@ -54,89 +62,19 @@ with app.app_context():
     db.create_all()
 
 # Allowed extensions
-ALLOWED_EXTENSIONS = {'zip'}
-IGNORED_DIRECTORIES = {'__pycache__', '.git', 'node_modules', 'venv', '.venv'}
-IGNORED_FILE_SUFFIXES = ('.pyc', '.pyo')
-
-def should_skip_directory(dirname):
-    return dirname in IGNORED_DIRECTORIES or dirname.startswith('.') or dirname.startswith('__')
-
-def should_skip_file(filename):
-    return filename.startswith('.') or filename.startswith('__') or filename.endswith(IGNORED_FILE_SUFFIXES)
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# ========== LOGIN DECORATOR ==========
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'logged_in' not in session:
-            return redirect(url_for('login', error='Please login first to access this page.'))
-        return f(*args, **kwargs)
-    return decorated_function
+project_service = ProjectService(app.config['UPLOAD_FOLDER'])
 
 # ========== HELPER FUNCTIONS ==========
-def force_delete_file(file_path):
-    """Force delete a file by removing read-only attribute"""
-    try:
-        if os.path.exists(file_path):
-            os.chmod(file_path, stat.S_IWRITE)
-            os.remove(file_path)
-            return True
-    except Exception as e:
-        print(f"Could not delete file: {e}")
-    return False
-
 def remove_empty_folders(folder_path):
-    """Remove all empty folders recursively"""
-    try:
-        root_path = os.path.abspath(folder_path)
-        upload_root = os.path.abspath(app.config['UPLOAD_FOLDER'])
-        for root, dirs, files in os.walk(folder_path, topdown=False):
-            for dir_name in dirs:
-                dir_path = os.path.join(root, dir_name)
-                try:
-                    if os.path.exists(dir_path) and not os.listdir(dir_path):
-                        os.rmdir(dir_path)
-                except:
-                    pass
-            try:
-                current_root = os.path.abspath(root)
-                if current_root != upload_root and current_root != root_path and os.path.exists(root) and not os.listdir(root):
-                    os.rmdir(root)
-            except:
-                pass
-        if root_path != upload_root and os.path.exists(folder_path) and not os.listdir(folder_path):
-            os.rmdir(folder_path)
-    except:
-        pass
-
-def force_delete_folder(folder_path):
-    """Force delete a folder and all its contents"""
-    if not os.path.exists(folder_path):
-        return True
-    
-    try:
-        shutil.rmtree(folder_path, ignore_errors=True)
-        return True
-    except:
-        try:
-            for root, dirs, files in os.walk(folder_path):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    force_delete_file(file_path)
-            shutil.rmtree(folder_path, ignore_errors=True)
-            return True
-        except:
-            return False
+    """Backward-compatible wrapper for the shared cleanup helper."""
+    return _remove_empty_folders(folder_path, app.config['UPLOAD_FOLDER'])
 
 def index_file_chunks(file_id, file_path, content):
     """Index a file's content into vector database"""
     try:
         # Split content into chunks
-        chunk_size = 1000
-        overlap = 200
+        chunk_size = Config.CHUNK_SIZE
+        overlap = Config.CHUNK_OVERLAP
         chunks = []
         
         for i in range(0, len(content), chunk_size - overlap):
@@ -183,47 +121,21 @@ def upload_page():
     """Show the upload page"""
     return render_template('upload.html')
 
+@app.route('/workspace/<project_name>')
+@login_required
+def workspace(project_name):
+    """Read-only project workspace built from the existing uploaded files."""
+    workspace_data = project_service.get_workspace(project_name, request.args.get('file'))
+    if not workspace_data:
+        return redirect(url_for('dashboard', error='Project not found'))
+    return render_template('workspace.html', workspace=workspace_data)
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
     """Show all uploaded projects and their files"""
-    projects = []
-    
-    if os.path.exists(app.config['UPLOAD_FOLDER']):
-        remove_empty_folders(app.config['UPLOAD_FOLDER'])
-        
-        for item in os.listdir(app.config['UPLOAD_FOLDER']):
-            item_path = os.path.join(app.config['UPLOAD_FOLDER'], item)
-            
-            if os.path.isdir(item_path):
-                all_files = []
-                try:
-                    for root, dirs, files in os.walk(item_path):
-                        dirs[:] = [d for d in dirs if not should_skip_directory(d)]
-                        for file in files:
-                            if not should_skip_file(file):
-                                try:
-                                    file_path = os.path.join(root, file)
-                                    relative_path = os.path.relpath(file_path, item_path)
-                                    all_files.append({
-                                        'name': file,
-                                        'path': relative_path,
-                                        'size': os.path.getsize(file_path),
-                                        'extension': file.split('.')[-1] if '.' in file else 'txt',
-                                        'folder': os.path.dirname(relative_path) if os.path.dirname(relative_path) else 'root'
-                                    })
-                                except:
-                                    continue
-                except:
-                    continue
-                
-                if len(all_files) > 0:
-                    all_files.sort(key=lambda x: x['name'])
-                    projects.append({
-                        'name': item,
-                        'file_count': len(all_files),
-                        'files': all_files
-                    })
+    remove_empty_folders(app.config['UPLOAD_FOLDER'])
+    projects = project_service.list_projects(include_details=True)
     
     msg = request.args.get('msg', '')
     error = request.args.get('error', '')
@@ -236,19 +148,14 @@ def do_login():
     """Handle login form submission"""
     email = request.form.get('email', '')
     password = request.form.get('password', '')
-    
-    if not email or not password:
-        return redirect(url_for('login', error='Please enter both email and password'))
-    
-    user = User.query.filter_by(email=email).first()
-    
-    if user and check_password_hash(user.password, password):
+    user, error = AuthService.authenticate(email, password)
+    if user:
         session['user'] = user.email
         session['fullname'] = user.fullname
         session['logged_in'] = True
+        session.permanent = request.form.get('remember_me') == 'on'
         return redirect(url_for('dashboard', msg='Login successful! Welcome back!'))
-    else:
-        return redirect(url_for('login', error='Invalid email or password'))
+    return redirect(url_for('login', error=error))
 
 @app.route('/do-register', methods=['POST'])
 def do_register():
@@ -258,39 +165,30 @@ def do_register():
     password = request.form.get('password', '')
     confirm_password = request.form.get('confirm_password', '')
     
-    # Validation
-    if not fullname or not email or not password:
-        return redirect(url_for('register', error='Please fill all fields'))
-    
-    if password != confirm_password:
-        return redirect(url_for('register', error='Passwords do not match'))
-    
-    if len(password) < 6:
-        return redirect(url_for('register', error='Password must be at least 6 characters'))
-
-    # Check if user already exists
-    existing_user = User.query.filter_by(email=email).first()
-    if existing_user:
-        return redirect(url_for('register', error='Email already registered. Please login instead.'))
-    
-    # Create new user
-    hashed_password = generate_password_hash(password)
-    new_user = User(fullname=fullname, email=email, password=hashed_password)
-    
-    try:
-        db.session.add(new_user)
-        db.session.commit()
+    user, error = AuthService.register(fullname, email, password, confirm_password)
+    if user:
         session.clear()
         return redirect(url_for('login', msg='Registration successful! Please login to continue.'))
-    except Exception as e:
-        db.session.rollback()
-        return redirect(url_for('register', error=f'Registration failed: {str(e)}'))
+    return redirect(url_for('register', error=error))
 
 @app.route('/logout')
 def logout():
     """Log out the user"""
     session.clear()
     return redirect(url_for('home', msg='You have been logged out successfully!'))
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Password recovery placeholder until delivery infrastructure is configured."""
+    msg = ''
+    if request.method == 'POST':
+        msg = 'If an account exists for that email, recovery instructions will be sent when email delivery is configured.'
+    return render_template('forgot_password.html', msg=msg)
+
+@app.route('/reset-password')
+def reset_password():
+    """Password reset placeholder; no token delivery exists in the current application."""
+    return render_template('reset_password.html')
 
 # ========== API UPLOAD ROUTE ==========
 @app.route('/api/upload', methods=['POST'])
@@ -526,22 +424,7 @@ def generate_readme():
     if not AI_AVAILABLE:
         return "⚠️ AI features are not available. Please check your API key in config.py"
     
-    all_files = []
-    uploads_path = app.config['UPLOAD_FOLDER']
-    
-    if os.path.exists(uploads_path):
-        for project in os.listdir(uploads_path):
-            project_path = os.path.join(uploads_path, project)
-            if os.path.isdir(project_path):
-                for root, dirs, files in os.walk(project_path):
-                    dirs[:] = [d for d in dirs if not should_skip_directory(d)]
-                    for file in files:
-                        if not should_skip_file(file):
-                            all_files.append({
-                                'name': file,
-                                'project': project,
-                                'description': f"File in {project} project"
-                            })
+    all_files = project_service.list_all_project_files()
     
     try:
         readme = rag_service.generate_readme(all_files)
@@ -588,33 +471,7 @@ def api_search():
 @login_required
 def api_projects():
     """API endpoint to get all projects and their files"""
-    projects = []
-    
-    if os.path.exists(app.config['UPLOAD_FOLDER']):
-        for item in os.listdir(app.config['UPLOAD_FOLDER']):
-            item_path = os.path.join(app.config['UPLOAD_FOLDER'], item)
-            
-            if os.path.isdir(item_path):
-                file_list = []
-                for root, dirs, files in os.walk(item_path):
-                    dirs[:] = [d for d in dirs if not should_skip_directory(d)]
-                    for file in files:
-                        if not should_skip_file(file):
-                            file_path = os.path.join(root, file)
-                            relative_path = os.path.relpath(file_path, item_path)
-                            file_list.append({
-                                'name': file,
-                                'path': relative_path,
-                                'size': os.path.getsize(file_path)
-                            })
-                
-                projects.append({
-                    'name': item,
-                    'file_count': len(file_list),
-                    'files': file_list
-                })
-    
-    return jsonify({'success': True, 'projects': projects})
+    return jsonify({'success': True, 'projects': project_service.list_projects()})
 
 # ========== DEBUG INDEX ROUTE ==========
 @app.route('/debug/index')

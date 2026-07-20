@@ -2,10 +2,12 @@ import faiss
 import numpy as np
 import os
 
+from app.config import Config
+
 class VectorService:
     def __init__(self):
-        self.path = 'faiss_index.bin'
-        self.dimension = 768
+        self.path = Config.VECTOR_INDEX_PATH
+        self.dimension = Config.EMBEDDING_DIMENSION
         self.index = None
         
         # Load existing index if available
@@ -88,4 +90,3 @@ class VectorService:
         if os.path.exists(self.path):
             os.remove(self.path)
             print("✅ Index cleared")
-            

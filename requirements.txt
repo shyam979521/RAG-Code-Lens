@@ -1,6 +1,6 @@
 flask
 flask-sqlalchemy
-google-generativeai
+groq
 faiss-cpu
 numpy
 python-dotenv

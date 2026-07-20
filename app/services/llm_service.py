@@ -1,12 +1,12 @@
 from groq import Groq
-from config import Config
+from app.config import Config
 
 class LLMService:
     def __init__(self):
         try:
             self.client = Groq(api_key=Config.GROQ_API_KEY)
             # Use a simpler, more reliable model
-            self.model = "llama-3.1-8b-instant"
+            self.model = Config.LLM_MODEL
             print("✅ LLM Service initialized with Groq")
             print(f"   Using model: {self.model}")
         except Exception as e:
